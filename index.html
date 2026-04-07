@@ -477,7 +477,9 @@ function renderTasasPreview(){const c=document.getElementById('tasas-preview');i
 
 // ── CÁLCULO PRINCIPAL ──
 function calcCheque(imp, dias, tasa){
-  const interes = imp * (tasa/100) * (dias/365);
+  // TNAA = TNA vencida convertida a adelantada
+  const tnaa    = (tasa/100) / (1 + (tasa/100) * (dias/365));
+  const interes = imp * tnaa * (dias/365);
   const iva     = interes * IVA_RATE;
   const perc    = interes * PERC_RATE;
   const totalDesc = interes + iva + perc;
