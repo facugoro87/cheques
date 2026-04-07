@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Descuento de Cheques</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg: #0f1117;
+  --surface: #181c27;
+  --surface2: #1e2336;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.14);
+  --text: #e8eaf0;
+  --muted: #6b7280;
+  --accent: #3b82f6;
+  --accent-dim: rgba(59,130,246,0.13);
+  --green: #10b981;
+  --green-dim: rgba(16,185,129,0.13);
+  --red: #ef4444;
+  --red-dim: rgba(239,68,68,0.13);
+  --amber: #f59e0b;
+  --amber-dim: rgba(245,158,11,0.13);
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'IBM Plex Sans', sans-serif;
+  --r: 8px; --r2: 12px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.5; }
+
+header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 20px; display: flex; align-items: center; justify-content: space-between; height: 52px; position: sticky; top: 0; z-index: 100; }
+.logo { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--accent); letter-spacing: 0.08em; }
+.header-right { display: flex; align-items: center; gap: 8px; }
+.sync-pill { font-family: var(--mono); font-size: 10px; padding: 3px 10px; border-radius: 20px; border: 1px solid var(--border2); color: var(--muted); cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+.sync-pill.ok     { color: var(--green); border-color: rgba(16,185,129,0.3); background: var(--green-dim); }
+.sync-pill.err    { color: var(--amber); border-color: rgba(245,158,11,0.3); background: var(--amber-dim); }
+.sync-pill.loading{ color: var(--accent); border-color: rgba(59,130,246,0.3); background: var(--accent-dim); }
+.nav-tabs { display: flex; gap: 2px; }
+.nav-tab { background: none; border: none; color: var(--muted); font-family: var(--sans); font-size: 12px; padding: 5px 12px; border-radius: var(--r); cursor: pointer; transition: all 0.15s; }
+.nav-tab.active { background: var(--accent-dim); color: var(--accent); }
+.nav-tab:hover:not(.active) { color: var(--text); background: rgba(255,255,255,0.04); }
+
+.page { display: none; padding: 24px 20px; max-width: 980px; margin: 0 auto; }
+.page.active { display: block; }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r2); padding: 20px; margin-bottom: 16px; }
+.card-title { font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.card-badge { font-family: var(--mono); font-size: 10px; padding: 2px 8px; border-radius: 20px; background: var(--accent-dim); color: var(--accent); letter-spacing: 0.04em; font-weight: 600; white-space: nowrap; }
+.card-badge.green { background: var(--green-dim); color: var(--green); }
+.card-badge.amber { background: var(--amber-dim); color: var(--amber); }
+
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label { font-size: 11px; color: var(--muted); font-weight: 500; letter-spacing: 0.04em; }
+.field input, .field select { background: var(--bg); border: 1px solid var(--border2); border-radius: var(--r); color: var(--text); font-family: var(--mono); font-size: 13px; padding: 8px 10px; width: 100%; transition: border-color 0.15s; -webkit-appearance: none; }
+.field input:focus, .field select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
+.field select { cursor: pointer; }
+.field select option { background: #1e2336; }
+
+.cuit-row { display: flex; gap: 8px; align-items: flex-end; margin-top: 12px; }
+.cuit-row .field { flex: 1; }
+.btn-bcra { background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--r); color: var(--text); font-family: var(--sans); font-size: 12px; font-weight: 500; padding: 0 14px; cursor: pointer; transition: all 0.15s; white-space: nowrap; display: flex; align-items: center; gap: 6px; flex-shrink: 0; height: 38px; }
+.btn-bcra:hover { border-color: var(--accent); color: var(--accent); }
+
+/* editing highlight */
+.form-editing { border: 1px solid var(--amber); border-radius: var(--r2); padding: 16px; background: rgba(245,158,11,0.04); }
+.edit-notice { font-size: 12px; color: var(--amber); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+
+.btn { border: none; border-radius: var(--r); cursor: pointer; font-family: var(--sans); font-size: 13px; font-weight: 500; padding: 9px 18px; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; }
+.btn-primary { background: var(--accent); color: #fff; width: 100%; justify-content: center; margin-top: 4px; }
+.btn-primary:hover { background: #2563eb; }
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary.editing { background: var(--amber); }
+.btn-primary.editing:hover { background: #d97706; }
+.btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border2); }
+.btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+.btn-success { background: var(--green); color: #fff; justify-content: center; }
+.btn-success:hover { background: #059669; }
+.btn-icon { background: none; border: none; color: var(--muted); font-size: 13px; padding: 4px 7px; border-radius: 6px; cursor: pointer; transition: all 0.15s; line-height: 1; }
+.btn-icon:hover.edit  { background: var(--accent-dim); color: var(--accent); }
+.btn-icon:hover.del   { background: var(--red-dim); color: var(--red); }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 740px; }
+thead th { font-family: var(--mono); font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; padding: 8px 8px; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; }
+thead th:first-child { text-align: left; }
+tbody td { padding: 9px 8px; border-bottom: 1px solid var(--border); text-align: right; color: var(--text); font-family: var(--mono); font-size: 11px; vertical-align: middle; }
+tbody td:first-child { text-align: left; font-family: var(--sans); }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: rgba(255,255,255,0.02); }
+tbody tr.editing-row td { background: rgba(245,158,11,0.06); }
+.empty-row td { text-align: center; color: var(--muted); font-family: var(--sans); font-size: 13px; padding: 32px; font-style: italic; }
+
+.metrics-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+@media (min-width: 560px) { .metrics-grid { grid-template-columns: repeat(4, minmax(0,1fr)); } }
+.metrics-row2 { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin-top: 10px; }
+@media (min-width: 560px) { .metrics-row2 { grid-template-columns: repeat(4, minmax(0,1fr)); } }
+.metric { background: var(--surface2); border-radius: var(--r); padding: 12px 14px; }
+.metric-label { font-size: 11px; color: var(--muted); margin-bottom: 5px; font-weight: 500; }
+.metric-value { font-family: var(--mono); font-size: 16px; font-weight: 600; color: var(--text); }
+.metric-value.green  { color: var(--green); }
+.metric-value.red    { color: var(--red); }
+.metric-value.accent { color: var(--accent); }
+.metric-value.amber  { color: var(--amber); }
+
+.badge { display: inline-block; font-family: var(--mono); font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; letter-spacing: 0.04em; }
+.badge-ok   { background: var(--green-dim); color: var(--green); }
+.badge-warn { background: var(--amber-dim); color: var(--amber); }
+.badge-err  { background: var(--red-dim);   color: var(--red); }
+
+.alert { border-radius: var(--r); padding: 11px 14px; font-size: 13px; margin-bottom: 12px; display: none; }
+.alert-err { background: var(--red-dim); border: 1px solid rgba(239,68,68,0.25); color: #fca5a5; }
+.alert.visible { display: block; }
+.hint { font-size: 11px; color: var(--amber); margin-top: 6px; display: none; }
+.hint.visible { display: block; }
+
+.divider { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+.row-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+
+/* ── RESUMEN PANTALLA ── */
+.resumen-section { display: none; }
+.resumen-section.visible { display: block; }
+.resumen-box { background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--r2); padding: 20px; font-family: var(--mono); font-size: 12px; line-height: 1.9; white-space: pre-wrap; color: var(--text); }
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+/* ── RESUMEN PDF (oculto en pantalla, visible al imprimir) ── */
+#pdf-frame { display: none; }
+
+@media print {
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body > *:not(#pdf-frame) { display: none !important; }
+  #pdf-frame {
+    display: block !important;
+    font-family: 'Arial', sans-serif;
+    font-size: 11pt;
+    color: #000;
+    padding: 20mm;
+    line-height: 1.6;
+  }
+  .pdf-header { border-bottom: 2px solid #000; padding-bottom: 8pt; margin-bottom: 16pt; }
+  .pdf-title { font-size: 16pt; font-weight: bold; margin-bottom: 4pt; }
+  .pdf-meta { font-size: 10pt; color: #444; }
+  .pdf-meta table { width: 100%; border-collapse: collapse; }
+  .pdf-meta td { padding: 2pt 8pt 2pt 0; font-size: 10pt; }
+  .pdf-meta td:first-child { color: #666; width: 120pt; }
+  .pdf-section-title { font-size: 10pt; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; color: #444; margin: 14pt 0 6pt; border-bottom: 1px solid #ccc; padding-bottom: 3pt; }
+  .pdf-table { width: 100%; border-collapse: collapse; font-size: 9pt; margin-bottom: 12pt; }
+  .pdf-table th { background: #f0f0f0; border: 1px solid #ccc; padding: 4pt 6pt; text-align: right; font-weight: bold; font-size: 8.5pt; }
+  .pdf-table th:first-child { text-align: left; }
+  .pdf-table td { border: 1px solid #ddd; padding: 4pt 6pt; text-align: right; color: #000; }
+  .pdf-table td:first-child { text-align: left; }
+  .pdf-table td span, .pdf-table td div { color: #000 !important; }
+  .pdf-table tr:nth-child(even) td { background: #fafafa; }
+  .pdf-totales { width: 100%; border-collapse: collapse; margin-top: 4pt; }
+  .pdf-totales td { padding: 3pt 8pt; font-size: 10pt; }
+  .pdf-totales td:first-child { color: #555; }
+  .pdf-totales td:last-child { text-align: right; font-weight: bold; font-family: 'Courier New', monospace; }
+  .pdf-totales tr.destacado td { font-size: 11pt; border-top: 2px solid #000; padding-top: 6pt; }
+  .pdf-footer { margin-top: 16pt; font-size: 8pt; color: #999; border-top: 1px solid #ddd; padding-top: 6pt; }
+  .pdf-err { color: #c00; font-style: italic; }
+}
+
+/* CONFIG */
+.config-steps { background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--r2); overflow: hidden; }
+.config-step { padding: 18px 20px; border-bottom: 1px solid var(--border); display: flex; gap: 16px; }
+.config-step:last-child { border-bottom: none; }
+.step-num { background: var(--accent); color: #fff; font-family: var(--mono); font-size: 11px; font-weight: 600; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+.step-body { flex: 1; }
+.step-title { font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+.step-desc { font-size: 12px; color: var(--muted); line-height: 1.8; }
+.step-desc code { background: var(--bg); border: 1px solid var(--border2); border-radius: 4px; padding: 1px 6px; font-family: var(--mono); font-size: 11px; color: var(--accent); }
+.url-input { width: 100%; background: var(--bg); border: 1px solid var(--border2); border-radius: var(--r); color: var(--text); font-family: var(--mono); font-size: 12px; padding: 8px 10px; margin-top: 8px; }
+.url-input:focus { outline: none; border-color: var(--accent); }
+.url-input::placeholder { color: var(--muted); }
+.tasas-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 12px; border-radius: var(--r); font-family: var(--mono); font-size: 12px; margin-bottom: 4px; background: var(--bg); border: 1px solid var(--border); }
+.tasas-row span:first-child { color: var(--muted); }
+.tasas-row span:last-child { color: var(--text); font-weight: 600; }
+.feriado-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.feriado-chip { background: var(--surface2); border: 1px solid var(--border2); border-radius: 20px; padding: 3px 10px 3px 12px; font-family: var(--mono); font-size: 11px; color: var(--text); display: flex; align-items: center; gap: 6px; }
+.feriado-chip button { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 12px; line-height: 1; padding: 0; }
+.feriado-chip button:hover { color: var(--red); }
+.add-row { display: flex; gap: 8px; }
+.add-row input { flex: 1; background: var(--bg); border: 1px solid var(--border2); border-radius: var(--r); color: var(--text); font-family: var(--mono); font-size: 13px; padding: 7px 10px; }
+.add-row input:focus { outline: none; border-color: var(--accent); }
+
+.spin { display: inline-block; animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 500px) {
+  header { padding: 0 12px; }
+  .nav-tab { font-size: 11px; padding: 4px 9px; }
+  .page { padding: 14px 12px; }
+  .card { padding: 14px; }
+  .btn-bcra .bcra-label { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══ PDF FRAME (solo visible al imprimir) ══ -->
+<div id="pdf-frame"></div>
+
+<header>
+  <div class="logo">&#9632; DESCUENTO DE CHEQUES</div>
+  <div class="header-right">
+    <div class="sync-pill" id="sync-pill" onclick="sincronizar()" title="Tocar para actualizar">&#9679; Sin conectar</div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showPage('operacion',this)">Operación</button>
+      <button class="nav-tab" onclick="showPage('config',this)">Configuración</button>
+    </div>
+  </div>
+</header>
+
+<!-- ══ OPERACIÓN ══ -->
+<div class="page active" id="page-operacion">
+
+  <div class="card">
+    <div class="card-title">Datos del cliente</div>
+    <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px,1fr));">
+      <div class="field"><label>Cliente / Razón social</label><input type="text" id="v-cliente" placeholder="Ej: Agro San Juan S.A." /></div>
+      <div class="field"><label>Vendedor</label><input type="text" id="v-vendedor" placeholder="Tu nombre" /></div>
+      <div class="field"><label>Fecha de operación</label><input type="date" id="v-fecha-op" /></div>
+    </div>
+    <div class="cuit-row">
+      <div class="field"><label>CUIT del cliente</label><input type="text" id="v-cuit" placeholder="20-12345678-9" maxlength="13" inputmode="numeric" oninput="formatearCuit(this)" /></div>
+      <button class="btn-bcra" onclick="consultarBCRA()">&#128269; <span class="bcra-label">Consultar BCRA</span></button>
+    </div>
+    <div class="hint" id="bcra-hint">&#9888; Ingresá el CUIT completo para consultar el BCRA</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <span id="form-titulo">Cargar cheque</span>
+      <span class="card-badge" id="badge-tasa">Tasas: —</span>
+    </div>
+    <div id="edit-notice" class="edit-notice" style="display:none;">
+      &#9998; Editando cheque N° <span id="edit-num-label"></span> — modificá los datos y guardá
+    </div>
+    <div id="alert-cheque" class="alert alert-err"></div>
+    <div id="form-cheque-inner">
+      <div class="form-grid">
+        <div class="field"><label>N° de cheque</label><input type="text" id="c-num" placeholder="12345678" inputmode="numeric" /></div>
+        <div class="field"><label>Banco (cód. BCRA)</label><select id="c-banco"><option value="">— Seleccionar —</option></select></div>
+        <div class="field"><label>Importe ($)</label><input type="number" id="c-importe" placeholder="0.00" min="0" step="0.01" inputmode="decimal" oninput="actualizarPreview()" /></div>
+        <div class="field"><label>Fecha de cobro</label><input type="date" id="c-fecha" onchange="actualizarPreview()" /></div>
+      </div>
+      <div id="c-preview" style="margin-top:12px;font-family:var(--mono);font-size:12px;color:var(--muted);min-height:20px;line-height:1.7;"></div>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button class="btn btn-primary" id="btn-agregar" onclick="agregarOguardar()" style="flex:1;">+ Agregar cheque a la operación</button>
+        <button class="btn btn-secondary" id="btn-cancelar-edit" onclick="cancelarEdicion()" style="display:none;">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Cheques cargados</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align:left;min-width:150px;">N° / Banco</th>
+            <th>Importe</th>
+            <th>Vencimiento</th>
+            <th>Días corr.</th>
+            <th>TNA</th>
+            <th>Interés</th>
+            <th>IVA 10.5%</th>
+            <th>Perc. 1.5%</th>
+            <th>Neto</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody-cheques">
+          <tr class="empty-row"><td colspan="11">Aún no cargaste ningún cheque</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="metrics-grid">
+      <div class="metric"><div class="metric-label">Total nominal</div><div class="metric-value" id="m-nominal">$0</div></div>
+      <div class="metric"><div class="metric-label">Neto a acreditar</div><div class="metric-value green" id="m-neto">$0</div></div>
+      <div class="metric"><div class="metric-label">Total descontado</div><div class="metric-value red" id="m-desc">$0</div></div>
+      <div class="metric"><div class="metric-label">Plazo prom. pond.</div><div class="metric-value accent" id="m-plazo">— días</div></div>
+    </div>
+    <div class="metrics-row2">
+      <div class="metric"><div class="metric-label">Interés total</div><div class="metric-value red" id="m-interes">$0</div></div>
+      <div class="metric"><div class="metric-label">IVA 10.5% total</div><div class="metric-value red" id="m-iva">$0</div></div>
+      <div class="metric"><div class="metric-label">TNA ponderada</div><div class="metric-value amber" id="m-tna">—</div></div>
+      <div class="metric"><div class="metric-label">TEA ponderada</div><div class="metric-value amber" id="m-tea">—</div></div>
+    </div>
+
+    <div class="row-actions">
+      <button class="btn btn-secondary" onclick="limpiarTodo()">&#10007; Nueva operación</button>
+      <button class="btn btn-success" onclick="generarResumen()">&#10003; Cerrar y generar resumen</button>
+    </div>
+  </div>
+
+  <div class="resumen-section" id="resumen-section">
+    <div class="card">
+      <div class="card-title">Resumen de operación</div>
+      <div class="resumen-box" id="resumen-box"></div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="copiarResumen()">&#128203; Copiar para WhatsApp</button>
+        <button class="btn btn-secondary" onclick="imprimirPDF()">&#128438; Imprimir / Guardar PDF</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ CONFIGURACIÓN ══ -->
+<div class="page" id="page-config">
+
+  <div class="card">
+    <div class="card-title">Sincronización con Google Sheets</div>
+    <div class="config-steps">
+      <div class="config-step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Estructura de la planilla</div>
+          <div class="step-desc">
+            Dos pestañas con nombres exactos:<br><br>
+            <strong>Pestaña <code>tasas</code></strong> — sin encabezado: <code>desde</code> | <code>hasta</code> | <code>tasa</code><br>
+            Ej: <code>1 | 30 | 24</code>&nbsp;&nbsp;<code>31 | 60 | 25</code>&nbsp;&nbsp;...<br><br>
+            <strong>Pestaña <code>feriados</code></strong> — fechas en formato <code>AAAA-MM-DD</code>, una por fila.
+          </div>
+        </div>
+      </div>
+      <div class="config-step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Publicar como CSV</div>
+          <div class="step-desc"><strong>Archivo → Compartir → Publicar en la web</strong><br>Seleccioná cada pestaña, formato <code>CSV</code>, copiá el link. Repetí para las dos pestañas.</div>
+        </div>
+      </div>
+      <div class="config-step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Pegá los links y guardá</div>
+          <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px;">
+            <div>
+              <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Link CSV — pestaña <code style="background:var(--bg);border:1px solid var(--border2);border-radius:3px;padding:1px 5px;font-family:var(--mono);font-size:11px;color:var(--accent);">tasas</code></div>
+              <input class="url-input" type="text" id="url-tasas" placeholder="https://docs.google.com/spreadsheets/d/..." />
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Link CSV — pestaña <code style="background:var(--bg);border:1px solid var(--border2);border-radius:3px;padding:1px 5px;font-family:var(--mono);font-size:11px;color:var(--accent);">feriados</code></div>
+              <input class="url-input" type="text" id="url-feriados" placeholder="https://docs.google.com/spreadsheets/d/..." />
+            </div>
+            <button class="btn btn-primary" onclick="guardarURLs()">Guardar y sincronizar ahora</button>
+            <div id="url-ok" style="font-size:12px;color:var(--green);display:none;">&#10003; Links guardados</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Tasas vigentes <span class="card-badge green" id="sync-fecha-lbl">—</span></div>
+    <div id="tasas-preview"><div style="color:var(--muted);font-size:13px;font-style:italic;">Sin datos.</div></div>
+    <div style="margin-top:12px;"><button class="btn btn-secondary" onclick="sincronizar()">&#8635; Actualizar ahora</button></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Feriados locales (respaldo sin internet)</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">Con conexión los feriados vienen de Google Sheets. Estos son el respaldo offline.</div>
+    <div class="feriado-grid" id="feriado-grid"></div>
+    <div class="add-row" style="margin-bottom:12px;"><input type="date" id="nuevo-feriado" /><button class="btn btn-secondary" onclick="agregarFeriado()">+ Agregar</button></div>
+    <button class="btn btn-primary" onclick="guardarFeriados()">Guardar feriados locales</button>
+    <div id="feriados-ok" style="font-size:12px;color:var(--green);margin-top:8px;display:none;">&#10003; Guardado</div>
+  </div>
+
+</div>
+
+<script>
+// ── CONSTANTES IVA ──
+const IVA_RATE  = 0.105;  // 10.5%
+const PERC_RATE = 0.015;  // 1.5%
+
+const BANCOS=[
+  {c:'007',n:'Banco de Galicia y Buenos Aires'},{c:'011',n:'Banco de la Nación Argentina'},
+  {c:'014',n:'Banco de la Provincia de Buenos Aires'},{c:'015',n:'ICBC Argentina'},
+  {c:'016',n:'Citibank'},{c:'017',n:'BBVA Argentina'},{c:'020',n:'Banco de la Provincia de Córdoba'},
+  {c:'027',n:'Banco Supervielle'},{c:'029',n:'Banco Ciudad de Buenos Aires'},{c:'034',n:'Banco Patagonia'},
+  {c:'044',n:'Banco Hipotecario'},{c:'045',n:'Banco San Juan'},{c:'060',n:'Banco de la Provincia de Tucumán'},
+  {c:'072',n:'Banco Santander Argentina'},{c:'083',n:'Banco del Chubut'},{c:'086',n:'Banco de Santa Cruz'},
+  {c:'093',n:'Banco de la Pampa'},{c:'094',n:'Banco de Entre Ríos'},{c:'097',n:'Banco Credicoop'},
+  {c:'150',n:'HSBC Bank Argentina'},{c:'191',n:'Banco Bradesco Argentina'},{c:'198',n:'Banco de Corrientes'},
+  {c:'269',n:'Nuevo Banco del Chaco'},{c:'277',n:'Banco Meridian'},{c:'281',n:'Banco Piano'},
+  {c:'285',n:'Banco Julio'},{c:'295',n:'Banco de La Rioja'},{c:'299',n:'Banco Provincia de Neuquén'},
+  {c:'300',n:'Mercado Pago'},{c:'301',n:'Banco Interamericano de Finanzas'},{c:'315',n:'Brubank'},
+  {c:'321',n:'Banco de Santiago del Estero'},{c:'323',n:'BICE'},{c:'331',n:'Banco Comafi'},
+  {c:'339',n:'Banco Macro'},{c:'341',n:'Naranja X'},{c:'384',n:'Wilobank'},
+  {c:'386',n:'Nuevo Banco de Santa Fe'},{c:'389',n:'Banco Columbia'},
+  {c:'440',n:'Banco Municipal de Rosario'},{c:'474',n:'Banco Itaú Argentina'},
+  {c:'478',n:'Banco de Servicios y Transacciones'},
+];
+
+const TASAS_DEFAULT=[
+  {desde:1,hasta:30,tasa:24},{desde:31,hasta:60,tasa:25},{desde:61,hasta:90,tasa:26},
+  {desde:91,hasta:120,tasa:27},{desde:121,hasta:180,tasa:28},{desde:181,hasta:360,tasa:29},
+];
+const FERIADOS_DEFAULT=[
+  '2025-01-01','2025-03-03','2025-03-04','2025-04-02','2025-04-17','2025-04-18',
+  '2025-05-01','2025-05-25','2025-06-16','2025-06-20','2025-07-09','2025-08-17',
+  '2025-10-12','2025-11-20','2025-12-08','2025-12-25',
+  '2026-01-01','2026-02-16','2026-02-17','2026-04-02','2026-04-03','2026-04-06',
+  '2026-05-01','2026-05-25','2026-06-15','2026-06-20','2026-07-09','2026-08-17',
+  '2026-10-12','2026-11-20','2026-12-08','2026-12-25',
+];
+
+let tasas=ld('tasas',TASAS_DEFAULT);
+let feriados=new Set(ld('feriados',FERIADOS_DEFAULT));
+let urlTasas=ld('url_tasas','');
+let urlFeriados=ld('url_feriados','');
+let ultimaSync=ld('ultima_sync',null);
+let cheques=[];
+let nextId=1;
+let editandoId=null;  // id del cheque en edición, null = modo agregar
+
+function ld(k,d){try{const v=localStorage.getItem('dc6_'+k);return v?JSON.parse(v):d;}catch(e){return d;}}
+function sv(k,v){try{localStorage.setItem('dc6_'+k,JSON.stringify(v));}catch(e){}}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  poblarBancos();
+  renderFeriados();
+  document.getElementById('v-fecha-op').value=hoy();
+  if(urlTasas) document.getElementById('url-tasas').value=urlTasas;
+  if(urlFeriados) document.getElementById('url-feriados').value=urlFeriados;
+  actualizarBadgeTasa();
+  renderTasasPreview();
+  if(ultimaSync) setPill('ok','&#10003; '+ultimaSync);
+  if(urlTasas||urlFeriados) sincronizar(true);
+});
+
+// ── CUIT ──
+function formatearCuit(el){
+  let v=el.value.replace(/\D/g,'');
+  if(v.length>11) v=v.slice(0,11);
+  if(v.length>10) el.value=v.slice(0,2)+'-'+v.slice(2,10)+'-'+v.slice(10);
+  else if(v.length>2) el.value=v.slice(0,2)+'-'+v.slice(2);
+  else el.value=v;
+}
+function consultarBCRA(){
+  const cuit=document.getElementById('v-cuit').value.replace(/\D/g,'');
+  const hint=document.getElementById('bcra-hint');
+  if(!cuit||cuit.length<10){hint.classList.add('visible');setTimeout(()=>hint.classList.remove('visible'),3000);return;}
+  hint.classList.remove('visible');
+  window.open('https://www.bcra.gob.ar/BCRAyVos/Situacion_Crediticia.asp?nro='+cuit,'_blank');
+}
+
+// ── SHEETS ──
+async function sincronizar(silencioso=false){
+  const uT=document.getElementById('url-tasas').value.trim()||urlTasas;
+  const uF=document.getElementById('url-feriados').value.trim()||urlFeriados;
+  if(!uT&&!uF){setPill('err','&#9888; Sin links');return;}
+  if(!silencioso) setPill('loading','<span class="spin">&#8635;</span> Sincronizando...');
+  let ok=true;
+  if(uT){try{const p=parseTasas(await fetchCSV(uT));if(p.length){tasas=p;sv('tasas',tasas);}}catch(e){ok=false;}}
+  if(uF){try{const p=parseFeriados(await fetchCSV(uF));if(p.length){feriados=new Set(p);sv('feriados',[...feriados]);renderFeriados();}}catch(e){ok=false;}}
+  if(ok){ultimaSync=new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});sv('ultima_sync',ultimaSync);setPill('ok','&#10003; '+ultimaSync);}
+  else setPill('err','&#9888; Sin conexión — caché');
+  actualizarBadgeTasa();renderTasasPreview();
+}
+async function fetchCSV(url){const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error();return r.text();}
+function parseTasas(csv){return csv.trim().split('\n').filter(Boolean).reduce((a,l,i)=>{const c=l.split(',').map(x=>x.trim().replace(/"/g,''));const d=parseFloat(c[0]),h=parseFloat(c[1]),t=parseFloat(c[2]);if(i===0&&isNaN(d))return a;if(!isNaN(d)&&!isNaN(h)&&!isNaN(t))a.push({desde:d,hasta:h,tasa:t});return a;},[]);}
+function parseFeriados(csv){return csv.trim().split('\n').filter(Boolean).reduce((a,l,i)=>{const v=l.trim().replace(/"/g,'');if(i===0&&v.toLowerCase()==='fecha')return a;if(/^\d{4}-\d{2}-\d{2}$/.test(v))a.push(v);return a;},[]);}
+function guardarURLs(){urlTasas=document.getElementById('url-tasas').value.trim();urlFeriados=document.getElementById('url-feriados').value.trim();sv('url_tasas',urlTasas);sv('url_feriados',urlFeriados);const ok=document.getElementById('url-ok');ok.style.display='block';setTimeout(()=>ok.style.display='none',2000);sincronizar();}
+function setPill(t,h){const el=document.getElementById('sync-pill');el.className='sync-pill '+t;el.innerHTML=h;}
+function actualizarBadgeTasa(){const b=document.getElementById('badge-tasa');if(!b)return;if(ultimaSync){b.textContent='Tasas al '+ultimaSync;b.className='card-badge green';}else{b.textContent='Tasas locales';b.className='card-badge amber';}}
+function renderTasasPreview(){const c=document.getElementById('tasas-preview');if(!c||!tasas.length)return;c.innerHTML=tasas.map(t=>`<div class="tasas-row"><span>${t.desde}–${t.hasta} días corridos</span><span>TNA ${t.tasa}%</span></div>`).join('');const l=document.getElementById('sync-fecha-lbl');if(l)l.textContent=ultimaSync?'Sync: '+ultimaSync:'Locales';}
+
+// ── CÁLCULO PRINCIPAL ──
+function calcCheque(imp, dias, tasa){
+  const interes = imp * (tasa/100) * (dias/365);
+  const iva     = interes * IVA_RATE;
+  const perc    = interes * PERC_RATE;
+  const totalDesc = interes + iva + perc;
+  const neto    = imp - totalDesc;
+  return {interes, iva, perc, totalDesc, neto};
+}
+
+// ── DÍAS ──
+function diasHabiles(d,h){let n=0;const c=new Date(d+'T12:00:00');c.setDate(c.getDate()+1);const f=new Date(h+'T12:00:00');while(c<=f){const w=c.getDay(),s=c.toISOString().split('T')[0];if(w!==0&&w!==6&&!feriados.has(s))n++;c.setDate(c.getDate()+1);}return n;}
+function getTasa(d){return tasas.find(t=>d>=t.desde&&d<=t.hasta)||null;}
+// Dado un ISO date, devuelve el próximo día hábil (mismo día si ya es hábil)
+function proximoHabil(iso){
+  const d=new Date(iso+'T12:00:00');
+  while(true){
+    const dow=d.getDay();
+    const s=d.toISOString().split('T')[0];
+    if(dow!==0&&dow!==6&&!feriados.has(s)) return s;
+    d.setDate(d.getDate()+1);
+  }
+}
+// Días corridos desde hoy hasta la fecha efectiva de acreditación
+// La fecha efectiva es el próximo día hábil igual o posterior a la fecha del cheque
+function diasCorridos(desdeISO, hastaISO){
+  const efectiva = proximoHabil(hastaISO);
+  const inicio=new Date(desdeISO+'T12:00:00');
+  const fin=new Date(efectiva+'T12:00:00');
+  return {dias: Math.round((fin-inicio)/(1000*60*60*24)), fechaEfectiva: efectiva};
+}
+function hoy(){return new Date().toISOString().split('T')[0];}
+
+// ── PREVIEW ──
+function actualizarPreview(){
+  const fecha=document.getElementById('c-fecha').value;
+  const imp=parseFloat(document.getElementById('c-importe').value)||0;
+  const prev=document.getElementById('c-preview');
+  if(!fecha){prev.innerHTML='';return;}
+  const {dias:diasC, fechaEfectiva}=diasCorridos(hoy(),fecha);
+  if(diasC<=0){prev.innerHTML='<span style="color:var(--red)">&#9888; La fecha debe ser posterior a hoy</span>';return;}
+  if(diasC>360){prev.innerHTML=`<span style="color:var(--red)">&#9888; ${diasC} días corridos — SUPERA LOS 360 DÍAS. No descontable.</span>`;return;}
+  const t=getTasa(diasC);
+  if(!t){prev.innerHTML=`<span style="color:var(--amber)">&#9888; Sin tasa para ${diasC} días corridos</span>`;return;}
+  if(imp>0){
+    const r=calcCheque(imp,diasC,t.tasa);
+    prev.innerHTML=
+      `<span style="color:var(--muted)">${diasC} días corridos${fechaEfectiva!==fecha?' · Acred.: '+ffecha(fechaEfectiva):'' } · TNA ${t.tasa}%</span><br>`+
+      `Interés <span style="color:var(--red)">-${fmt(r.interes)}</span> &nbsp;+&nbsp; `+
+      `IVA 10.5% <span style="color:var(--red)">-${fmt(r.iva)}</span> &nbsp;+&nbsp; `+
+      `Perc. 1.5% <span style="color:var(--red)">-${fmt(r.perc)}</span><br>`+
+      `Neto <span style="color:var(--green);font-weight:600">${fmt(r.neto)}</span>`;
+  } else {
+    prev.innerHTML=`<span style="color:var(--muted)">${diasC} días corridos${fechaEfectiva!==fecha?' · Acred.: '+ffecha(fechaEfectiva):''} · TNA ${t.tasa}%</span>`;
+  }
+}
+
+// ── AGREGAR / GUARDAR EDICIÓN ──
+function agregarOguardar(){
+  if(editandoId!==null) guardarEdicion();
+  else agregarCheque();
+}
+
+function agregarCheque(){
+  const datos=leerFormulario();
+  if(!datos) return;
+  cheques.push({id:nextId++,...datos});
+  limpiarFormulario();
+  document.getElementById('resumen-section').classList.remove('visible');
+  renderCheques();
+}
+
+function leerFormulario(){
+  const num=document.getElementById('c-num').value.trim();
+  const bEl=document.getElementById('c-banco');
+  const bcod=bEl.value,bnom=bcod?bEl.options[bEl.selectedIndex].text:'';
+  const imp=parseFloat(document.getElementById('c-importe').value)||0;
+  const fecha=document.getElementById('c-fecha').value;
+
+  if(!num){ac('Ingresá el número de cheque.');return null;}
+  if(!bcod){ac('Seleccioná el banco.');return null;}
+  if(!imp||imp<=0){ac('Ingresá un importe válido.');return null;}
+  if(!fecha){ac('Ingresá la fecha de cobro.');return null;}
+
+  const dias=diasHabiles(hoy(),fecha);
+  const {dias:diasC, fechaEfectiva}=diasCorridos(hoy(),fecha);
+  if(diasC<=0){ac('La fecha de cobro debe ser posterior a hoy.');return null;}
+
+  const t=getTasa(diasC);
+  let estado,interes=0,iva=0,perc=0,totalDesc=0,neto=0;
+  if(diasC>360)  {estado='ERROR';}
+  else if(!t)   {estado='SIN TASA';}
+  else{
+    estado='OK';
+    const r=calcCheque(imp,diasC,t.tasa);
+    ({interes,iva,perc,totalDesc,neto}=r);
+  }
+  return {num,bcod,bnom:bnom.split("–").pop().trim(),imp,fecha,fechaEfectiva,dias,diasC,tasa:t?t.tasa:null,interes,iva,perc,totalDesc,neto,estado};
+}
+
+function limpiarFormulario(){
+  document.getElementById('c-num').value='';
+  document.getElementById('c-importe').value='';
+  document.getElementById('c-fecha').value='';
+  document.getElementById('c-banco').value='';
+  document.getElementById('c-preview').innerHTML='';
+  document.getElementById('alert-cheque').classList.remove('visible');
+}
+
+function ac(msg){const el=document.getElementById('alert-cheque');el.textContent=msg;el.classList.add('visible');setTimeout(()=>el.classList.remove('visible'),4000);}
+
+// ── EDITAR ──
+function iniciarEdicion(id){
+  const c=cheques.find(x=>x.id===id);
+  if(!c) return;
+  editandoId=id;
+
+  document.getElementById('c-num').value=c.num;
+  document.getElementById('c-banco').value=c.bcod;
+  document.getElementById('c-importe').value=c.imp;
+  document.getElementById('c-fecha').value=c.fecha;
+
+  document.getElementById('edit-notice').style.display='flex';
+  document.getElementById('edit-num-label').textContent=c.num;
+  document.getElementById('btn-agregar').textContent='&#10003; Guardar cambios';
+  document.getElementById('btn-agregar').classList.add('editing');
+  document.getElementById('btn-cancelar-edit').style.display='';
+  document.getElementById('form-titulo').textContent='Editar cheque';
+
+  actualizarPreview();
+  document.getElementById('c-num').focus();
+  document.getElementById('form-titulo').scrollIntoView({behavior:'smooth',block:'nearest'});
+
+  // resaltar fila
+  document.querySelectorAll('#tbody-cheques tr').forEach(tr=>tr.classList.remove('editing-row'));
+  const fila=document.querySelector(`#tbody-cheques tr[data-id="${id}"]`);
+  if(fila) fila.classList.add('editing-row');
+}
+
+function guardarEdicion(){
+  const datos=leerFormulario();
+  if(!datos) return;
+  const idx=cheques.findIndex(x=>x.id===editandoId);
+  if(idx===-1) return;
+  cheques[idx]={id:editandoId,...datos};
+  cancelarEdicion();
+  document.getElementById('resumen-section').classList.remove('visible');
+  renderCheques();
+}
+
+function cancelarEdicion(){
+  editandoId=null;
+  limpiarFormulario();
+  document.getElementById('edit-notice').style.display='none';
+  document.getElementById('btn-agregar').innerHTML='+ Agregar cheque a la operación';
+  document.getElementById('btn-agregar').classList.remove('editing');
+  document.getElementById('btn-cancelar-edit').style.display='none';
+  document.getElementById('form-titulo').textContent='Cargar cheque';
+  document.querySelectorAll('#tbody-cheques tr').forEach(tr=>tr.classList.remove('editing-row'));
+}
+
+// ── TABLA ──
+function renderCheques(){
+  const tb=document.getElementById('tbody-cheques');
+  tb.innerHTML='';
+  if(!cheques.length){tb.innerHTML='<tr class="empty-row"><td colspan="11">Aún no cargaste ningún cheque</td></tr>';actualizarMetricas();return;}
+  cheques.forEach(c=>{
+    const tr=document.createElement('tr');
+    tr.setAttribute('data-id',c.id);
+    if(editandoId===c.id) tr.classList.add('editing-row');
+    const bcls=c.estado==='OK'?'badge-ok':c.estado==='ERROR'?'badge-err':'badge-warn';
+    const btxt=c.estado==='OK'?'OK':c.estado==='ERROR'?'&#9888;+360d':'SIN TASA';
+    tr.innerHTML=`
+      <td>
+        <div style="font-family:var(--mono);font-size:12px;font-weight:600;">${c.num}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:1px;">${c.bcod} · ${c.bnom.substring(0,22)}</div>
+      </td>
+      <td>${fmt(c.imp)}</td>
+      <td style="white-space:nowrap;font-size:11px;">${ffecha(c.fecha)}${c.fechaEfectiva&&c.fechaEfectiva!==c.fecha?'<br><span style="font-size:10px;color:var(--amber);">acred. '+ffecha(c.fechaEfectiva)+'</span>':''}</td>
+      <td style="font-weight:600;">${c.diasC}</td>
+      <td>${c.tasa?c.tasa+'%':'—'}</td>
+      <td style="color:var(--red);">${c.estado==='OK'?'-'+fmt(c.interes):'—'}</td>
+      <td style="color:var(--red);">${c.estado==='OK'?'-'+fmt(c.iva):'—'}</td>
+      <td style="color:var(--red);">${c.estado==='OK'?'-'+fmt(c.perc):'—'}</td>
+      <td style="color:var(--green);font-weight:600;">${c.estado==='OK'?fmt(c.neto):'—'}</td>
+      <td><span class="badge ${bcls}">${btxt}</span></td>
+      <td style="white-space:nowrap;">
+        <button class="btn-icon edit" onclick="iniciarEdicion(${c.id})" title="Editar">&#9998;</button>
+        <button class="btn-icon del" onclick="eliminarCheque(${c.id})" title="Eliminar">&#10005;</button>
+      </td>`;
+    tb.appendChild(tr);
+  });
+  actualizarMetricas();
+}
+
+function eliminarCheque(id){
+  if(editandoId===id) cancelarEdicion();
+  cheques=cheques.filter(c=>c.id!==id);
+  renderCheques();
+  document.getElementById('resumen-section').classList.remove('visible');
+}
+
+// ── MÉTRICAS ──
+function actualizarMetricas(){
+  const val=cheques.filter(c=>c.estado==='OK');
+  const totN=cheques.reduce((s,c)=>s+c.imp,0);
+  const totNeto=val.reduce((s,c)=>s+c.neto,0);
+  const totDesc=val.reduce((s,c)=>s+c.totalDesc,0);
+  const totInt=val.reduce((s,c)=>s+c.interes,0);
+  const totIva=val.reduce((s,c)=>s+c.iva,0);
+  const totValN=val.reduce((s,c)=>s+c.imp,0);
+  const plazo=totN>0?val.reduce((s,c)=>s+c.diasC*c.imp,0)/totN:0;
+  const plazoval=totValN>0?val.reduce((s,c)=>s+c.diasC*c.imp,0)/totValN:0;
+  const tna=totValN>0?val.reduce((s,c)=>s+c.tasa*c.imp,0)/totValN:null;
+  const tea=(totNeto>0&&totValN>0&&plazoval>0)?(Math.pow(totValN/totNeto,365/plazoval)-1)*100:null;
+
+  document.getElementById('m-nominal').textContent=fmt(totN);
+  document.getElementById('m-neto').textContent=fmt(totNeto);
+  document.getElementById('m-desc').textContent=fmt(totDesc);
+  document.getElementById('m-plazo').textContent=val.length?Math.round(plazo)+' días':'— días';
+  document.getElementById('m-interes').textContent=fmt(totInt);
+  document.getElementById('m-iva').textContent=fmt(totIva);
+  document.getElementById('m-tna').textContent=tna!==null?tna.toFixed(2)+'%':'—';
+  document.getElementById('m-tea').textContent=tea!==null?tea.toFixed(2)+'%':'—';
+}
+
+// ── RESUMEN PANTALLA ──
+function generarResumen(){
+  if(!cheques.length){alert('Cargá al menos un cheque antes de cerrar la operación.');return;}
+  const cliente=document.getElementById('v-cliente').value||'—';
+  const vendedor=document.getElementById('v-vendedor').value||'—';
+  const cuit=document.getElementById('v-cuit').value||'—';
+  const fechaOp=document.getElementById('v-fecha-op').value||hoy();
+  const val=cheques.filter(c=>c.estado==='OK');
+  const totN=cheques.reduce((s,c)=>s+c.imp,0);
+  const totNeto=val.reduce((s,c)=>s+c.neto,0);
+  const totInt=val.reduce((s,c)=>s+c.interes,0);
+  const totIva=val.reduce((s,c)=>s+c.iva,0);
+  const totPerc=val.reduce((s,c)=>s+c.perc,0);
+  const totDesc=val.reduce((s,c)=>s+c.totalDesc,0);
+  const plazo=totN>0?Math.round(val.reduce((s,c)=>s+c.diasC*c.imp,0)/totN):0;
+  const tnaTxt=document.getElementById('m-tna').textContent;
+  const teaTxt=document.getElementById('m-tea').textContent;
+  const sep='─────────────────────────────────────\n';
+  let t='';
+  t+='═════════════════════════════════════\n';
+  t+='       DESCUENTO DE CHEQUES\n';
+  t+='═════════════════════════════════════\n';
+  t+='Cliente:    '+cliente+'\n';
+  t+='CUIT:       '+cuit+'\n';
+  t+='Vendedor:   '+vendedor+'\n';
+  t+='Fecha op.:  '+ffecha(fechaOp)+'\n';
+  t+=sep;
+  t+='DETALLE DE CHEQUES:\n\n';
+  cheques.forEach((c,i)=>{
+    t+=(i+1)+'. Cheque N° '+c.num+'\n';
+    t+='   Banco:     '+c.bcod+' – '+c.bnom+'\n';
+    t+='   Importe:   '+fmt(c.imp)+'\n';
+    t+='   Vto.:      '+ffecha(c.fecha)+'\n';
+    t+='   Días corridos: '+c.diasC+'\n'+(c.fechaEfectiva&&c.fechaEfectiva!==c.fecha?'   Fecha acred.: '+ffecha(c.fechaEfectiva)+'\n':'');
+    if(c.estado==='OK'){
+      t+='   TNA:       '+c.tasa+'%\n';
+      t+='   Interés:   -'+fmt(c.interes)+'\n';
+      t+='   IVA 10.5%: -'+fmt(c.iva)+'\n';
+      t+='   Perc.1.5%: -'+fmt(c.perc)+'\n';
+      t+='   Neto:      '+fmt(c.neto)+'\n';
+    } else t+='   ESTADO:    ⚠ '+c.estado+'\n';
+    t+='\n';
+  });
+  t+=sep;
+  t+='RESUMEN FINAL:\n';
+  t+='  Nominal total:    '+fmt(totN)+'\n';
+  t+='  Intereses:        -'+fmt(totInt)+'\n';
+  t+='  IVA 10.5%:        -'+fmt(totIva)+'\n';
+  t+='  Percepción 1.5%:  -'+fmt(totPerc)+'\n';
+  t+='  Total descontado: -'+fmt(totDesc)+'\n';
+  t+='  NETO A ACREDITAR: '+fmt(totNeto)+'\n';
+  t+='  Plazo prom. pond: '+plazo+' días hábiles\n';
+  t+='  TNA ponderada:    '+tnaTxt+'\n';
+  t+='  TEA ponderada:    '+teaTxt+'\n';
+  if(ultimaSync) t+='\nTasas vigentes al: '+ultimaSync+'\n';
+  t+='═════════════════════════════════════\n';
+
+  document.getElementById('resumen-box').textContent=t;
+  // también preparar PDF
+  prepararPDF(cliente,cuit,vendedor,fechaOp,totN,totNeto,totInt,totIva,totPerc,totDesc,plazo,tnaTxt,teaTxt);
+
+  const sec=document.getElementById('resumen-section');
+  sec.classList.add('visible');
+  setTimeout(()=>sec.scrollIntoView({behavior:'smooth',block:'start'}),50);
+}
+
+// ── PDF ──
+function prepararPDF(cliente,cuit,vendedor,fechaOp,totN,totNeto,totInt,totIva,totPerc,totDesc,plazo,tnaTxt,teaTxt){
+  const val=cheques.filter(c=>c.estado==='OK');
+  const err=cheques.filter(c=>c.estado!=='OK');
+
+  let filas=cheques.map((c,i)=>`
+    <tr>
+      <td style="color:#000">${i+1}. N° ${c.num}<br><span style="color:#444;font-size:8pt;">${c.bcod} – ${c.bnom}</span></td>
+      <td style="text-align:right">${fmt(c.imp)}</td>
+      <td style="text-align:right">${ffecha(c.fecha)}${c.fechaEfectiva&&c.fechaEfectiva!==c.fecha?'<br><small style="color:#c00">acred.'+ffecha(c.fechaEfectiva)+'</small>':''}</td>
+      <td style="text-align:right">${c.diasC}</td>
+      <td style="text-align:right">${c.tasa?c.tasa+'%':'—'}</td>
+      <td style="text-align:right">${c.estado==='OK'?fmt(c.interes):'—'}</td>
+      <td style="text-align:right">${c.estado==='OK'?fmt(c.iva):'—'}</td>
+      <td style="text-align:right">${c.estado==='OK'?fmt(c.perc):'—'}</td>
+      <td style="text-align:right">${c.estado==='OK'?`<strong>${fmt(c.neto)}</strong>`:`<span class="pdf-err">⚠ ${c.estado}</span>`}</td>
+    </tr>`).join('');
+
+  const html=`
+    <div class="pdf-header">
+      <div class="pdf-title">Descuento de Cheques</div>
+      <div class="pdf-meta">
+        <table><tr>
+          <td>Cliente:</td><td>${cliente}</td>
+          <td>CUIT:</td><td>${cuit}</td>
+        </tr><tr>
+          <td>Vendedor:</td><td>${vendedor}</td>
+          <td>Fecha:</td><td>${ffecha(fechaOp)}</td>
+        </tr></table>
+      </div>
+    </div>
+
+    <div class="pdf-section-title">Detalle de cheques</div>
+    <table class="pdf-table">
+      <thead><tr>
+        <th style="text-align:left">N° Cheque / Banco</th>
+        <th>Importe</th>
+        <th>Vencimiento</th>
+        <th>Días corr.</th>
+        <th>TNA</th>
+        <th>Interés</th>
+        <th>IVA 10.5%</th>
+        <th>Perc. 1.5%</th>
+        <th>Neto</th>
+      </tr></thead>
+      <tbody>${filas}</tbody>
+    </table>
+
+    <div class="pdf-section-title">Resumen de la operación</div>
+    <table class="pdf-totales">
+      <tr><td>Nominal total:</td><td>${fmt(totN)}</td></tr>
+      <tr><td>Intereses:</td><td>- ${fmt(totInt)}</td></tr>
+      <tr><td>IVA 10.5% sobre intereses:</td><td>- ${fmt(totIva)}</td></tr>
+      <tr><td>Percepción IVA 1.5%:</td><td>- ${fmt(totPerc)}</td></tr>
+      <tr><td>Total descontado:</td><td>- ${fmt(totDesc)}</td></tr>
+      <tr class="destacado"><td>NETO A ACREDITAR:</td><td>${fmt(totNeto)}</td></tr>
+      <tr><td></td><td></td></tr>
+      <tr><td>Plazo promedio ponderado:</td><td>${plazo} días hábiles</td></tr>
+      <tr><td>TNA ponderada:</td><td>${tnaTxt}</td></tr>
+      <tr><td>TEA ponderada:</td><td>${teaTxt}</td></tr>
+    </table>
+
+    <div class="pdf-footer">${ultimaSync?'Tasas vigentes al: '+ultimaSync+' &nbsp;·&nbsp; ':''} Generado el ${new Date().toLocaleDateString('es-AR')}</div>
+  `;
+  document.getElementById('pdf-frame').innerHTML=html;
+}
+
+function imprimirPDF(){
+  if(!document.getElementById('pdf-frame').innerHTML.trim()){
+    alert('Primero cerrá la operación para generar el resumen.');return;
+  }
+  window.print();
+}
+
+function copiarResumen(){
+  navigator.clipboard.writeText(document.getElementById('resumen-box').textContent).then(()=>{
+    const b=event.currentTarget,o=b.innerHTML;
+    b.innerHTML='&#10003; ¡Copiado!';
+    setTimeout(()=>b.innerHTML=o,2000);
+  });
+}
+
+function limpiarTodo(){
+  if(cheques.length>0&&!confirm('¿Limpiar toda la operación actual?'))return;
+  cheques=[];
+  cancelarEdicion();
+  document.getElementById('v-cliente').value='';
+  document.getElementById('v-vendedor').value='';
+  document.getElementById('v-cuit').value='';
+  document.getElementById('v-fecha-op').value=hoy();
+  document.getElementById('resumen-section').classList.remove('visible');
+  document.getElementById('pdf-frame').innerHTML='';
+  renderCheques();
+}
+
+// ── FERIADOS ──
+function renderFeriados(){const g=document.getElementById('feriado-grid');if(!g)return;g.innerHTML='';[...feriados].sort().forEach(f=>{const c=document.createElement('div');c.className='feriado-chip';c.innerHTML=`${ffecha(f)} <button onclick="quitarFeriado('${f}')">✕</button>`;g.appendChild(c);});}
+function agregarFeriado(){const v=document.getElementById('nuevo-feriado').value;if(!v)return;feriados.add(v);document.getElementById('nuevo-feriado').value='';renderFeriados();}
+function quitarFeriado(f){feriados.delete(f);renderFeriados();}
+function guardarFeriados(){sv('feriados',[...feriados]);const ok=document.getElementById('feriados-ok');ok.style.display='block';setTimeout(()=>ok.style.display='none',2500);}
+
+// ── UTILS ──
+function fmt(v){return '$'+(v||0).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function ffecha(iso){if(!iso)return '';const[y,m,d]=iso.split('-');return d+'/'+m+'/'+y;}
+function poblarBancos(){const s=document.getElementById('c-banco');BANCOS.forEach(b=>{const o=document.createElement('option');o.value=b.c;o.textContent=b.c+' – '+b.n;s.appendChild(o);});}
+function showPage(id,btn){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));document.getElementById('page-'+id).classList.add('active');if(btn)btn.classList.add('active');if(id==='config')renderTasasPreview();}
+</script>
+</body>
+</html>
