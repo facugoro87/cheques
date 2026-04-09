@@ -508,7 +508,12 @@ function diasCorridos(desdeISO, hastaISO){
   const fin=new Date(efectiva+'T12:00:00');
   return {dias: Math.round((fin-inicio)/(1000*60*60*24)), fechaEfectiva: efectiva};
 }
-function hoy(){return new Date().toISOString().split('T')[0];}
+function hoy(){
+  const d=new Date();
+  const offset=d.getTimezoneOffset();
+  const local=new Date(d.getTime()-offset*60000);
+  return local.toISOString().split('T')[0];
+}
 
 // ── PREVIEW ──
 function actualizarPreview(){
