@@ -232,6 +232,36 @@ tbody tr.editing-row td { background: rgba(245,158,11,0.06); }
 .absorcion-legend span { display: flex; align-items: center; gap: 5px; }
 .absorcion-legend .dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
 
+/* ── OPTIMIZADOR ── */
+.opt-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap: 14px; margin-top: 4px; }
+.opt-card { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--r2); overflow: hidden; }
+.opt-card.winner { border-color: var(--green); border-width: 2px; }
+.opt-card.shortest { border-color: var(--accent); border-width: 2px; }
+.opt-card.balanced { border-color: var(--amber); border-width: 2px; }
+.opt-card-header { padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; }
+.opt-card.winner .opt-card-header { background: var(--green-dim); }
+.opt-card.shortest .opt-card-header { background: var(--accent-dim); }
+.opt-card.balanced .opt-card-header { background: var(--amber-dim); }
+.opt-card-title { font-size: 12px; font-weight: 500; }
+.opt-card.winner .opt-card-title { color: var(--green); }
+.opt-card.shortest .opt-card-title { color: var(--accent); }
+.opt-card.balanced .opt-card-title { color: var(--amber); }
+.opt-card-body { padding: 14px; }
+.opt-stat { display: flex; justify-content: space-between; align-items: baseline; padding: 5px 0; border-bottom: 0.5px solid var(--border); font-size: 12px; }
+.opt-stat:last-child { border-bottom: none; }
+.opt-stat-label { color: var(--muted); }
+.opt-stat-val { font-family: var(--mono); font-weight: 600; color: var(--text); }
+.opt-stat-val.green { color: var(--green); }
+.opt-stat-val.red { color: var(--red); }
+.opt-stat-val.accent { color: var(--accent); }
+.opt-cheques-list { margin-top: 12px; }
+.opt-cheque-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 8px; background: var(--surface2); border-radius: var(--r); margin-bottom: 4px; font-size: 11px; font-family: var(--mono); }
+.opt-cheque-row span:first-child { color: var(--muted); }
+.opt-usar-btn { width: 100%; margin-top: 12px; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--r); color: var(--text); font-family: var(--sans); font-size: 12px; padding: 8px; cursor: pointer; transition: all 0.15s; }
+.opt-usar-btn:hover { border-color: var(--accent); color: var(--accent); }
+.opt-empty { text-align: center; color: var(--muted); font-size: 13px; font-style: italic; padding: 32px; }
+.opt-computing { text-align: center; color: var(--accent); font-size: 13px; padding: 24px; font-family: var(--mono); }
+
 @media (max-width: 500px) {
   header { padding: 0 12px; }
   .nav-tab { font-size: 11px; padding: 4px 9px; }
@@ -253,6 +283,7 @@ tbody tr.editing-row td { background: rgba(245,158,11,0.06); }
     <div class="nav-tabs">
       <button class="nav-tab active" onclick="showPage('operacion',this)">Operación</button>
       <button class="nav-tab" onclick="showPage('precio',this)">Precio</button>
+      <button class="nav-tab" onclick="showPage('optimizar',this)">Optimizar</button>
       <button class="nav-tab" onclick="showPage('config',this)">Configuración</button>
     </div>
   </div>
@@ -357,6 +388,40 @@ tbody tr.editing-row td { background: rgba(245,158,11,0.06); }
         <button class="btn btn-secondary" onclick="imprimirPDF()">&#128438; Imprimir / Guardar PDF</button>
       </div>
     </div>
+  </div>
+
+</div>
+
+<!-- ══ OPTIMIZADOR ══ -->
+<div class="page" id="page-optimizar">
+
+  <div class="card">
+    <div class="card-title">Parámetros de la operación</div>
+    <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(160px,1fr));">
+      <div class="field">
+        <label>Importe total ($)</label>
+        <input type="number" id="opt-total" placeholder="0.00" min="0" step="0.01" inputmode="decimal" oninput="optimizar()" />
+      </div>
+      <div class="field">
+        <label>Cantidad de cheques</label>
+        <input type="number" id="opt-cantidad" placeholder="Ej: 5" min="1" max="10" step="1" inputmode="numeric" oninput="optimizar()" />
+      </div>
+      <div class="field">
+        <label>Plazo promedio objetivo (días)</label>
+        <input type="number" id="opt-plazo" placeholder="Ej: 60" min="1" max="360" step="1" inputmode="numeric" oninput="optimizar()" />
+      </div>
+      <div class="field">
+        <label>Tolerancia del plazo (± días)</label>
+        <input type="number" id="opt-tolerancia" value="15" min="1" max="60" step="1" inputmode="numeric" oninput="optimizar()" />
+      </div>
+    </div>
+    <div style="margin-top:12px;font-size:12px;color:var(--muted);">
+      El sistema evalúa miles de combinaciones de importes y plazos para encontrar las estructuras óptimas dentro del plazo objetivo ± tolerancia.
+    </div>
+  </div>
+
+  <div id="opt-resultado">
+    <div class="opt-empty">Completá los parámetros para ver las opciones optimizadas</div>
   </div>
 
 </div>
@@ -1045,6 +1110,223 @@ function guardarFeriados(){sv('feriados',[...feriados]);const ok=document.getEle
 function fmt(v){return '$'+(v||0).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function ffecha(iso){if(!iso)return '';const[y,m,d]=iso.split('-');return d+'/'+m+'/'+y;}
 function poblarBancos(){const s=document.getElementById('c-banco');BANCOS.forEach(b=>{const o=document.createElement('option');o.value=b.c;o.textContent=b.c+' – '+b.n;s.appendChild(o);});}
+
+
+// ══════════════════════════════════════════════
+//  OPTIMIZADOR DE ESTRUCTURA DE COBRO
+// ══════════════════════════════════════════════
+
+function optimizar() {
+  const total     = parseFloat(document.getElementById('opt-total').value) || 0;
+  const cantidad  = parseInt(document.getElementById('opt-cantidad').value) || 0;
+  const plazoObj  = parseInt(document.getElementById('opt-plazo').value) || 0;
+  const tolerancia= parseInt(document.getElementById('opt-tolerancia').value) || 15;
+  const res       = document.getElementById('opt-resultado');
+
+  if (!total || !cantidad || !plazoObj || cantidad < 1 || cantidad > 10) {
+    res.innerHTML = '<div class="opt-empty">Completá los parámetros para ver las opciones optimizadas</div>';
+    return;
+  }
+
+  res.innerHTML = '<div class="opt-computing"><span class="spin">&#8635;</span> Calculando combinaciones óptimas...</div>';
+
+  // Usar setTimeout para no bloquear el render
+  setTimeout(() => {
+    const resultado = calcularOptimas(total, cantidad, plazoObj, tolerancia);
+    renderOptimas(resultado, total, cantidad, plazoObj);
+  }, 30);
+}
+
+function calcularOptimas(total, cantidad, plazoObj, tolerancia) {
+  // Generar candidatos de días para cada cheque: los puntos medios de cada tramo + bordes
+  const diasCandidatos = [];
+  tasas.forEach(t => {
+    diasCandidatos.push(t.desde);
+    diasCandidatos.push(Math.round((t.desde + t.hasta) / 2));
+    diasCandidatos.push(t.hasta);
+  });
+  const diasUnicos = [...new Set(diasCandidatos)].filter(d => d >= 1 && d <= 360).sort((a,b)=>a-b);
+
+  // Para distribuir importes: probar importe igual + variaciones ponderadas
+  function importesCandidatos(n, total) {
+    const igual = Array(n).fill(total/n);
+    if (n === 1) return [igual];
+    const opciones = [igual];
+    // Distribuciones decrecientes y crecientes
+    for (let skew of [0.6, 0.7, 0.8]) {
+      const dec = distribuirSkew(n, total, skew, false);
+      const cre = distribuirSkew(n, total, skew, true);
+      opciones.push(dec, cre);
+    }
+    return opciones;
+  }
+
+  function distribuirSkew(n, total, factor, creciente) {
+    const pesos = Array.from({length:n}, (_,i) => Math.pow(factor, creciente ? n-1-i : i));
+    const sumP = pesos.reduce((a,b)=>a+b,0);
+    return pesos.map(p => (p/sumP)*total);
+  }
+
+  function evalCombinacion(plazos, importes) {
+    const totImp = importes.reduce((a,b)=>a+b,0);
+    let costoTotal = 0, plazoPromPond = 0;
+    const cheques = [];
+    for (let i=0; i<plazos.length; i++) {
+      const d = plazos[i];
+      const imp = importes[i];
+      const t = getTasa(d);
+      if (!t) return null;
+      const r = calcCheque(imp, d, t.tasa);
+      costoTotal += r.totalDesc;
+      plazoPromPond += d * imp;
+      cheques.push({dias:d, imp, tasa:t.tasa, ...r});
+    }
+    plazoPromPond /= totImp;
+    return {plazos, importes, cheques, costoTotal, plazoPromPond, neto: totImp - costoTotal};
+  }
+
+  // Generar combinaciones de plazos para n cheques
+  function* combinarPlazos(n, dias, plazoObj, tolerancia) {
+    if (n === 1) {
+      for (const d of dias) {
+        if (Math.abs(d - plazoObj) <= tolerancia) yield [d];
+      }
+      return;
+    }
+    for (let i=0; i<dias.length; i++) {
+      for (const resto of combinarPlazos(n-1, dias.slice(i), plazoObj, tolerancia)) {
+        const combo = [dias[i], ...resto];
+        const promedio = combo.reduce((a,b)=>a+b,0)/combo.length;
+        if (Math.abs(promedio - plazoObj) <= tolerancia) yield combo;
+      }
+    }
+  }
+
+  const mejores = [];
+  const vistas = new Set();
+  const impOpciones = importesCandidatos(cantidad, total);
+
+  // Evaluar combinaciones (con límite para no trabar el browser)
+  let intentos = 0;
+  for (const combo of combinarPlazos(cantidad, diasUnicos, plazoObj, tolerancia)) {
+    if (intentos++ > 5000) break;
+    const key = combo.join(',');
+    if (vistas.has(key)) continue;
+    vistas.add(key);
+
+    for (const importes of impOpciones) {
+      const ev = evalCombinacion(combo, importes);
+      if (!ev) continue;
+      mejores.push(ev);
+    }
+  }
+
+  if (!mejores.length) return null;
+
+  // Ordenar por costo y extraer las 3 mejores distintas
+  mejores.sort((a,b) => a.costoTotal - b.costoTotal);
+
+  const menorCosto   = mejores[0];
+  const mayorPlazo   = [...mejores].sort((a,b) => a.plazoPromPond - b.plazoPromPond)[0];
+  const equilibrada  = encontrarEquilibrada(mejores, menorCosto, mayorPlazo);
+
+  return {menorCosto, mayorPlazo, equilibrada};
+}
+
+function encontrarEquilibrada(lista, menorCosto, mayorPlazo) {
+  // Buscar la que minimiza una función combinada de costo normalizado + plazo normalizado
+  const maxCosto = Math.max(...lista.map(x=>x.costoTotal));
+  const minCosto = menorCosto.costoTotal;
+  const maxPlazo = Math.max(...lista.map(x=>x.plazoPromPond));
+  const minPlazo = mayorPlazo.plazoPromPond;
+
+  let mejor = null, mejorScore = Infinity;
+  for (const ev of lista) {
+    const normCosto = maxCosto===minCosto ? 0 : (ev.costoTotal-minCosto)/(maxCosto-minCosto);
+    const normPlazo = maxPlazo===minPlazo ? 0 : (ev.plazoPromPond-minPlazo)/(maxPlazo-minPlazo);
+    const score = 0.6*normCosto + 0.4*normPlazo;
+    if (score < mejorScore && ev !== menorCosto && ev !== mayorPlazo) {
+      mejorScore = score; mejor = ev;
+    }
+  }
+  return mejor || lista[1] || menorCosto;
+}
+
+function renderOptimas(resultado, total, cantidad, plazoObj) {
+  const res = document.getElementById('opt-resultado');
+  if (!resultado) {
+    res.innerHTML = '<div class="card"><div class="opt-empty">No se encontraron combinaciones válidas para estos parámetros.<br>Probá ajustar el plazo objetivo o la tolerancia.</div></div>';
+    return;
+  }
+
+  const {menorCosto, mayorPlazo, equilibrada} = resultado;
+
+  const opciones = [
+    {ev: menorCosto,  cls:'winner',   icon:'&#9733;', titulo:'Menor costo financiero'},
+    {ev: mayorPlazo,  cls:'shortest', icon:'&#9201;', titulo:'Plazo más corto'},
+    {ev: equilibrada, cls:'balanced', icon:'&#9878;', titulo:'Más equilibrada'},
+  ];
+
+  let html = '<div class="opt-cards">';
+  opciones.forEach(({ev, cls, icon, titulo}, idx) => {
+    const costoPct = (ev.costoTotal / total * 100).toFixed(3);
+    html += `
+    <div class="opt-card ${cls}">
+      <div class="opt-card-header">
+        <span class="opt-card-title">${icon} ${titulo}</span>
+      </div>
+      <div class="opt-card-body">
+        <div class="opt-stat"><span class="opt-stat-label">Costo financiero total</span><span class="opt-stat-val red">-${fmt(ev.costoTotal)}</span></div>
+        <div class="opt-stat"><span class="opt-stat-label">Porcentaje del total</span><span class="opt-stat-val red">${costoPct}%</span></div>
+        <div class="opt-stat"><span class="opt-stat-label">Neto a recibir</span><span class="opt-stat-val green">${fmt(ev.neto)}</span></div>
+        <div class="opt-stat"><span class="opt-stat-label">Plazo prom. ponderado</span><span class="opt-stat-val accent">${Math.round(ev.plazoPromPond)} días</span></div>
+        <div class="opt-cheques-list">
+          ${ev.cheques.map((c,i)=>`
+            <div class="opt-cheque-row">
+              <span>Cheque ${i+1} — ${c.dias} días</span>
+              <span>${fmt(c.imp)}</span>
+              <span style="color:var(--muted)">${c.tasa}%</span>
+            </div>`).join('')}
+        </div>
+        <button class="opt-usar-btn" onclick="usarEstructura(${idx})">Usar esta estructura en Operación ↗</button>
+      </div>
+    </div>`;
+  });
+  html += '</div>';
+
+  // Guardar para uso posterior
+  window._optResultado = resultado;
+  window._optTotal = total;
+
+  res.innerHTML = html;
+}
+
+function usarEstructura(idx) {
+  const r = window._optResultado;
+  if (!r) return;
+  const opciones = [r.menorCosto, r.mayorPlazo, r.equilibrada];
+  const ev = opciones[idx];
+  if (!ev) return;
+
+  // Ir a la pestaña operación
+  const tab = document.querySelector('.nav-tab');
+  showPage('operacion', document.querySelectorAll('.nav-tab')[0]);
+
+  // Mostrar mensaje con la estructura sugerida
+  const hoyStr = fechaBase();
+  const hoyDate = new Date(hoyStr+'T12:00:00');
+
+  // Pre-llenar los campos con el primer cheque como guía
+  alert(
+    'Estructura sugerida:\n\n' +
+    ev.cheques.map((c,i) => {
+      const fechaCheque = new Date(hoyDate);
+      fechaCheque.setDate(fechaCheque.getDate() + c.dias);
+      return `Cheque ${i+1}: ${fmt(c.imp)} — ${c.dias} días (${ffecha(fechaCheque.toISOString().split('T')[0])}) — TNA ${c.tasa}%`;
+    }).join('\n') +
+    '\n\nCargá cada cheque manualmente con estas fechas y montos.'
+  );
+}
 
 // ── PÁGINA PRECIO ──
 let modoPrecio = 'contado';
