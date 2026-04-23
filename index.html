@@ -1142,9 +1142,8 @@ function optimizar() {
 }
 
 function calcularOptimas(total, cantidad, plazoObj, tolerancia) {
-  // Los cheques se distribuyen equiespaciados en el tiempo
-  // El sistema prueba distintas separaciones entre cheques y distintos puntos de inicio
-  // manteniendo el plazo promedio dentro del objetivo ± tolerancia
+  // Cheques equiespaciados: días = [inicio, inicio+sep, inicio+2*sep, ...]
+  // También prueba con primer cheque en 0 (contado) o muy pocos días
 
   function evalCombinacion(plazos, importes) {
     const totImp = importes.reduce((a,b)=>a+b,0);
@@ -1153,6 +1152,13 @@ function calcularOptimas(total, cantidad, plazoObj, tolerancia) {
     for (let i=0; i<plazos.length; i++) {
       const d = plazos[i];
       const imp = importes[i];
+      // Cheque a 0 días: se cobra al contado, sin descuento
+      if (d === 0) {
+        costoTotal += 0;
+        plazoPromPond += 0;
+        cheques.push({dias:0, imp, tasa:0, interes:0, iva:0, perc:0, totalDesc:0, neto:imp});
+        continue;
+      }
       const t = getTasa(d);
       if (!t) return null;
       const r = calcCheque(imp, d, t.tasa);
@@ -1161,44 +1167,47 @@ function calcularOptimas(total, cantidad, plazoObj, tolerancia) {
       cheques.push({dias:d, imp, tasa:t.tasa, ...r});
     }
     plazoPromPond /= totImp;
-    return {plazos, importes, cheques, costoTotal, plazoPromPond, neto: totImp - costoTotal};
+    return {plazos:[...plazos], importes:[...importes], cheques, costoTotal, plazoPromPond, neto: totImp - costoTotal};
   }
 
-  // Generar combinaciones equiespaciadas
-  // Para n cheques con separación sep días y primer cheque en inicio:
-  // días = [inicio, inicio+sep, inicio+2*sep, ...]
-  // promedio = inicio + sep*(n-1)/2 = plazoObj → inicio = plazoObj - sep*(n-1)/2
+  const impIguales = Array(cantidad).fill(total/cantidad);
   const mejores = [];
-  const impCandidatos = [
-    Array(cantidad).fill(total/cantidad), // partes iguales
-  ];
 
-  // Probar separaciones desde 7 hasta 60 días
-  for (let sep = 7; sep <= 90; sep++) {
-    // Calcular inicio para que el promedio simple sea plazoObj
+  // ── Opción A: todos los cheques a plazo (equiespaciados) ──
+  for (let sep = 1; sep <= 90; sep++) {
     const inicio = Math.round(plazoObj - sep * (cantidad-1) / 2);
     if (inicio < 1) continue;
-
     const plazos = Array.from({length: cantidad}, (_, i) => inicio + sep * i);
     if (plazos[plazos.length-1] > 360) continue;
+    if (!plazos.every(d => getTasa(d))) continue;
+    const ev = evalCombinacion(plazos, impIguales);
+    if (!ev) continue;
+    if (Math.abs(ev.plazoPromPond - plazoObj) > tolerancia + 1) continue;
+    mejores.push(ev);
+  }
 
-    // Verificar que todos los plazos tienen tasa
-    const todosTasa = plazos.every(d => getTasa(d));
-    if (!todosTasa) continue;
-
-    for (const importes of impCandidatos) {
-      const ev = evalCombinacion(plazos, importes);
-      if (!ev) continue;
-      if (Math.abs(ev.plazoPromPond - plazoObj) > tolerancia) continue;
-      mejores.push(ev);
+  // ── Opción B: primer cheque al contado (día 0 o 1-7 días), resto equiespaciados ──
+  // El plazo promedio de los n-1 cheques restantes debe compensar el 0 del primero
+  // prom_pond = (0*imp + sum(dias_resto*imp)) / total = sum(dias_resto) / (n-1) = plazoObj * n/(n-1)
+  if (cantidad > 1) {
+    const plazoResto = Math.round(plazoObj * cantidad / (cantidad - 1));
+    for (let inicio = 1; inicio <= 15; inicio++) {
+      for (let sep = 1; sep <= 90; sep++) {
+        const plazosResto = Array.from({length: cantidad-1}, (_, i) => inicio + sep * i);
+        if (plazosResto[plazosResto.length-1] > 360) continue;
+        if (!plazosResto.every(d => getTasa(d))) continue;
+        const plazos = [0, ...plazosResto];
+        const ev = evalCombinacion(plazos, impIguales);
+        if (!ev) continue;
+        if (Math.abs(ev.plazoPromPond - plazoObj) > tolerancia + 1) continue;
+        mejores.push(ev);
+      }
     }
   }
 
   if (!mejores.length) return null;
 
-  // Ordenar por costo
   mejores.sort((a,b) => a.costoTotal - b.costoTotal);
-
   const menorCosto  = mejores[0];
   const mayorPlazo  = [...mejores].sort((a,b) => a.plazoPromPond - b.plazoPromPond)[0];
   const equilibrada = encontrarEquilibrada(mejores, menorCosto, mayorPlazo);
@@ -1256,9 +1265,9 @@ function renderOptimas(resultado, total, cantidad, plazoObj) {
         <div class="opt-cheques-list">
           ${ev.cheques.map((c,i)=>`
             <div class="opt-cheque-row">
-              <span>Cheque ${i+1} — ${c.dias} días</span>
+              <span>Cheque ${i+1} — ${c.dias===0?'Contado':c.dias+' días'}</span>
               <span>${fmt(c.imp)}</span>
-              <span style="color:var(--muted)">${c.tasa}%</span>
+              <span style="color:var(--muted)">${c.dias===0?'sin costo':c.tasa+'%'}</span>
             </div>`).join('')}
         </div>
         <button class="opt-usar-btn" onclick="usarEstructura(${idx})">Usar esta estructura en Operación ↗</button>
