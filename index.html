@@ -712,16 +712,20 @@ function proximoHabil(iso){
   }
 }
 // Días corridos desde la fecha de operación hasta la fecha efectiva de acreditación
-// El clearing bancario es +1 día HÁBIL después del vencimiento del cheque
-// Si vence viernes → acredita lunes (o martes si hay feriado), sumando los corridos reales
+// Lógica:
+//   1. Si el vencimiento es inhábil (finde/feriado) → se deposita el próximo día hábil
+//   2. Sobre ese día de depósito → se suma 1 día de clearing (próximo hábil siguiente)
+//   3. Los días corridos se cuentan desde la fecha de operación hasta la fecha de clearing
 function diasCorridos(desdeISO, hastaISO){
-  // Fecha efectiva = próximo día hábil DESPUÉS de la fecha del cheque (no el mismo)
-  const dVto = new Date(hastaISO+'T12:00:00');
-  dVto.setDate(dVto.getDate()+1); // avanzar un día para forzar "después de"
-  const sigDiaISO = dVto.toISOString().split('T')[0];
-  const efectiva = proximoHabil(sigDiaISO);
-  const inicio=new Date(desdeISO+'T12:00:00');
-  const fin=new Date(efectiva+'T12:00:00');
+  // Paso 1: día hábil de depósito (igual o posterior al vencimiento)
+  const diaDeposito = proximoHabil(hastaISO);
+  // Paso 2: día de clearing = próximo hábil DESPUÉS del depósito
+  const dDepDate = new Date(diaDeposito+'T12:00:00');
+  dDepDate.setDate(dDepDate.getDate()+1);
+  const efectiva = proximoHabil(dDepDate.toISOString().split('T')[0]);
+  // Paso 3: días corridos desde la fecha de operación hasta la fecha de clearing
+  const inicio = new Date(desdeISO+'T12:00:00');
+  const fin    = new Date(efectiva+'T12:00:00');
   const corridos = Math.round((fin-inicio)/(1000*60*60*24));
   return {dias: corridos, fechaEfectiva: efectiva};
 }
