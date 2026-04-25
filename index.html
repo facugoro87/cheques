@@ -1223,10 +1223,63 @@ function prepararPDF(cliente,cuit,vendedor,fechaOp,totN,totNeto,totInt,totIva,to
 }
 
 function imprimirPDF(){
-  if(!document.getElementById('pdf-frame').innerHTML.trim()){
+  const frame = document.getElementById('pdf-frame');
+  if(!frame.innerHTML.trim()){
     alert('Primero cerrá la operación para generar el resumen.');return;
   }
-  window.print();
+
+  const estilos = `
+    body { margin: 0; padding: 14mm 16mm; font-family: Arial, Helvetica, sans-serif; font-size: 9pt; color: #000; background: #fff; line-height: 1.5; }
+    * { color: #000; box-sizing: border-box; }
+    .pdf-emisor { border-bottom: 2pt solid #000; padding-bottom: 8pt; margin-bottom: 10pt; display: flex; justify-content: space-between; align-items: flex-start; }
+    .pdf-emisor-dados { font-size: 8pt; line-height: 1.6; }
+    .pdf-comp-title { font-size: 11pt; font-weight: bold; }
+    .pdf-comprobante { text-align: right; font-size: 8pt; line-height: 1.7; }
+    .pdf-cliente { margin-bottom: 10pt; }
+    .pdf-cliente table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+    .pdf-cliente td { padding: 2pt 6pt 2pt 0; vertical-align: top; }
+    .pdf-cliente td:first-child { font-weight: bold; width: 110pt; }
+    .pdf-cliente td:nth-child(3) { font-weight: bold; width: 100pt; padding-left: 16pt; }
+    .pdf-tasas-titulo, .pdf-docs-titulo, .pdf-deduccion-titulo { font-weight: bold; font-size: 8.5pt; margin: 10pt 0 4pt; border-bottom: 1pt solid #000; padding-bottom: 2pt; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 8pt; }
+    th { background: #d8d8d8; border: 0.5pt solid #666; padding: 3pt 5pt; font-weight: bold; text-align: center; color: #000; }
+    td { border: 0.5pt solid #999; padding: 2.5pt 5pt; color: #000; background: #fff; text-align: right; }
+    td.l, th.l { text-align: left; }
+    td.c, th.c { text-align: center; }
+    tr:nth-child(even) td { background: #f5f5f5; }
+    tr.sub-row td { font-size: 7pt; color: #333; background: #fafafa; border-top: none; }
+    .pdf-resumen-tabla td:first-child { background: #e8e8e8; font-weight: bold; width: 55%; text-align: left; }
+    .pdf-resumen-tabla td:last-child { text-align: right; }
+    .pdf-deduccion-tabla th:last-child { text-align: right; }
+    .pdf-deduccion-tabla td:last-child { text-align: right; }
+    .pdf-total-ded td { background: #e8e8e8; font-weight: bold; }
+    .pdf-total-ded td:last-child { text-align: right; }
+    .pdf-neto-final td { background: #d0d0d0; font-weight: bold; border: 1.5pt solid #000; font-size: 10pt; }
+    .pdf-neto-final td:last-child { text-align: right; font-size: 11pt; }
+    .pdf-metricas { margin-top: 8pt; font-size: 8pt; border-top: 0.5pt solid #999; padding-top: 5pt; }
+    .pdf-metricas td { border: none; background: #fff; padding: 1.5pt 10pt 1.5pt 0; text-align: left; font-size: 8pt; }
+    .pdf-metricas td:first-child { font-weight: bold; }
+    .pdf-nota { font-size: 7pt; color: #333; margin-top: 6pt; font-style: italic; border: 0.5pt solid #999; padding: 4pt 6pt; }
+    .pdf-footer { margin-top: 10pt; font-size: 7.5pt; color: #333; border-top: 0.5pt solid #999; padding-top: 4pt; text-align: center; }
+    .pdf-err { color: #c00; font-style: italic; }
+    small { color: #c00; }
+    strong { font-weight: bold; }
+  `;
+
+  const ventana = window.open('', '_blank', 'width=900,height=700');
+  ventana.document.write(`<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Liquidación de Descuento de Cheques</title>
+<style>${estilos}</style>
+</head>
+<body>
+${frame.innerHTML}
+<script>window.onload=function(){window.print();}<\/script>
+</body>
+</html>`);
+  ventana.document.close();
 }
 
 function copiarResumen(){
