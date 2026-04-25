@@ -134,50 +134,82 @@ tbody tr.editing-row td { background: rgba(245,158,11,0.06); }
   body > *:not(#pdf-frame) { display: none !important; }
   #pdf-frame {
     display: block !important;
-    font-family: 'Arial', sans-serif;
-    font-size: 11pt;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 9pt;
     color: #000;
-    padding: 16mm 20mm;
-    line-height: 1.6;
+    padding: 14mm 16mm;
+    line-height: 1.5;
     background: #fff;
   }
-  .pdf-header {
-    background: #1a4f8a;
-    color: #fff;
-    padding: 12pt 16pt;
-    border-radius: 4pt;
-    margin-bottom: 16pt;
+
+  /* ── ENCABEZADO ── */
+  .pdf-emisor {
+    border-bottom: 2pt solid #000;
+    padding-bottom: 8pt;
+    margin-bottom: 10pt;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
   }
-  .pdf-title { font-size: 17pt; font-weight: bold; color: #fff; margin-bottom: 6pt; }
-  .pdf-meta table { width: 100%; border-collapse: collapse; }
-  .pdf-meta td { padding: 2pt 8pt 2pt 0; font-size: 10pt; color: #cde; }
-  .pdf-meta td:first-child { color: #8bb8e8; width: 100pt; }
-  .pdf-section-title {
-    font-size: 9.5pt; font-weight: bold; text-transform: uppercase;
-    letter-spacing: 0.06em; color: #fff;
-    background: #2d6db5; padding: 4pt 8pt;
-    margin: 14pt 0 0; border-radius: 3pt 3pt 0 0;
-  }
-  .pdf-table { width: 100%; border-collapse: collapse; font-size: 8.5pt; margin-bottom: 14pt; }
-  .pdf-table th {
-    background: #3d7ec5; color: #fff;
-    border: 1px solid #2d6db5; padding: 4pt 6pt;
-    text-align: right; font-weight: bold; font-size: 8pt;
-  }
-  .pdf-table th:first-child { text-align: left; }
-  .pdf-table td { border: 1px solid #c5d8f0; padding: 4pt 6pt; text-align: right; color: #000; background: #fff; }
-  .pdf-table td:first-child { text-align: left; color: #000; }
-  .pdf-table td span, .pdf-table td div { color: #000 !important; }
-  .pdf-table tr:nth-child(even) td { background: #eef4fb; }
-  .pdf-totales-wrap { background: #f0f6ff; border: 1.5pt solid #2d6db5; border-radius: 4pt; padding: 8pt 12pt; margin-top: 2pt; }
-  .pdf-totales { width: 100%; border-collapse: collapse; }
-  .pdf-totales td { padding: 3pt 6pt; font-size: 10pt; color: #000; }
-  .pdf-totales td:first-child { color: #2d5a8a; font-weight: 500; }
-  .pdf-totales td:last-child { text-align: right; font-weight: bold; font-family: 'Courier New', monospace; color: #000; }
-  .pdf-totales tr.destacado td { font-size: 12pt; border-top: 2pt solid #1a4f8a; padding-top: 7pt; color: #1a4f8a; }
-  .pdf-totales tr.destacado td:last-child { color: #1a4f8a; }
-  .pdf-totales tr.sep td { padding: 2pt; border-top: 1pt solid #c5d8f0; }
-  .pdf-footer { margin-top: 14pt; font-size: 8pt; color: #666; border-top: 1pt solid #c5d8f0; padding-top: 5pt; }
+  .pdf-emisor-datos { font-size: 8pt; color: #333; line-height: 1.6; }
+  .pdf-emisor-datos strong { font-size: 10pt; color: #000; }
+  .pdf-comprobante { text-align: right; font-size: 8pt; color: #333; line-height: 1.7; }
+  .pdf-comprobante .pdf-comp-title { font-size: 11pt; font-weight: bold; color: #000; }
+
+  /* ── DATOS CLIENTE ── */
+  .pdf-cliente { margin-bottom: 10pt; }
+  .pdf-cliente table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+  .pdf-cliente td { padding: 2pt 6pt 2pt 0; vertical-align: top; }
+  .pdf-cliente td:first-child { font-weight: bold; width: 110pt; color: #000; }
+  .pdf-cliente td:nth-child(3) { font-weight: bold; width: 100pt; padding-left: 16pt; color: #000; }
+
+  /* ── TABLA DE TASAS ── */
+  .pdf-tasas-titulo { font-weight: bold; font-size: 8.5pt; margin: 10pt 0 4pt; border-bottom: 0.5pt solid #999; padding-bottom: 2pt; }
+  .pdf-tasas-tabla { width: 100%; border-collapse: collapse; font-size: 8pt; margin-bottom: 10pt; }
+  .pdf-tasas-tabla th { background: #e8e8e8; border: 0.5pt solid #999; padding: 3pt 6pt; text-align: center; font-weight: bold; }
+  .pdf-tasas-tabla td { border: 0.5pt solid #ccc; padding: 3pt 6pt; text-align: center; color: #000; }
+  .pdf-tasas-tabla td:first-child { text-align: left; }
+
+  /* ── TABLA DOCUMENTOS ── */
+  .pdf-docs-titulo { font-weight: bold; font-size: 8.5pt; margin: 10pt 0 0; border-bottom: 0.5pt solid #999; padding-bottom: 2pt; }
+  .pdf-docs-tabla { width: 100%; border-collapse: collapse; font-size: 7.5pt; margin-bottom: 0; }
+  .pdf-docs-tabla th { background: #e8e8e8; border: 0.5pt solid #999; padding: 3pt 5pt; text-align: center; font-weight: bold; }
+  .pdf-docs-tabla td { border: 0.5pt solid #ddd; padding: 2.5pt 5pt; text-align: right; color: #000; vertical-align: top; }
+  .pdf-docs-tabla td:first-child { text-align: center; }
+  .pdf-docs-tabla td.left { text-align: left; }
+  .pdf-docs-tabla tr.subtotal td { background: #f5f5f5; font-weight: bold; border-top: 1pt solid #999; }
+
+  /* ── SECCIÓN TOTALES ── */
+  .pdf-totales-section { margin-top: 10pt; display: flex; gap: 16pt; align-items: flex-start; }
+  .pdf-resumen-izq { flex: 1; }
+  .pdf-resumen-tabla { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+  .pdf-resumen-tabla td { padding: 3pt 6pt; border: 0.5pt solid #ddd; }
+  .pdf-resumen-tabla td:first-child { background: #f5f5f5; font-weight: bold; width: 160pt; }
+  .pdf-resumen-tabla td:last-child { text-align: right; }
+
+  /* ── DEDUCCIONES ── */
+  .pdf-deduccion-titulo { font-weight: bold; font-size: 8.5pt; margin: 10pt 0 4pt; }
+  .pdf-deduccion-tabla { width: 100%; border-collapse: collapse; font-size: 8.5pt; margin-bottom: 4pt; }
+  .pdf-deduccion-tabla th { background: #e8e8e8; border: 0.5pt solid #999; padding: 3pt 6pt; font-weight: bold; }
+  .pdf-deduccion-tabla th:last-child { text-align: right; }
+  .pdf-deduccion-tabla td { border: 0.5pt solid #ddd; padding: 3pt 6pt; color: #000; }
+  .pdf-deduccion-tabla td:last-child { text-align: right; }
+  .pdf-total-ded { width: 100%; border-collapse: collapse; font-size: 8.5pt; margin-bottom: 4pt; }
+  .pdf-total-ded td { padding: 3pt 6pt; border: 0.5pt solid #999; font-weight: bold; background: #f0f0f0; }
+  .pdf-total-ded td:last-child { text-align: right; }
+  .pdf-neto-final { width: 100%; border-collapse: collapse; font-size: 10pt; margin-top: 2pt; }
+  .pdf-neto-final td { padding: 5pt 6pt; border: 1pt solid #000; font-weight: bold; background: #e8e8e8; }
+  .pdf-neto-final td:last-child { text-align: right; font-size: 11pt; }
+
+  /* ── MÉTRICAS FINALES ── */
+  .pdf-metricas { margin-top: 10pt; font-size: 8pt; color: #333; border-top: 0.5pt solid #ccc; padding-top: 6pt; }
+  .pdf-metricas table { border-collapse: collapse; }
+  .pdf-metricas td { padding: 1.5pt 10pt 1.5pt 0; }
+  .pdf-metricas td:first-child { font-weight: bold; }
+
+  /* ── PIE ── */
+  .pdf-footer { margin-top: 12pt; font-size: 7.5pt; color: #666; border-top: 0.5pt solid #ccc; padding-top: 5pt; text-align: center; }
+  .pdf-nota { font-size: 7pt; color: #555; margin-top: 8pt; font-style: italic; line-height: 1.4; border: 0.5pt solid #ccc; padding: 4pt 6pt; }
   .pdf-err { color: #c00; font-style: italic; }
 }
 
@@ -1009,69 +1041,177 @@ function generarResumen(){
 // ── PDF ──
 function prepararPDF(cliente,cuit,vendedor,fechaOp,totN,totNeto,totInt,totIva,totPerc,totDesc,plazo,tnaTxt,teaTxt){
   const val=cheques.filter(c=>c.estado==='OK');
-  const err=cheques.filter(c=>c.estado!=='OK');
 
-  let filas=cheques.map((c,i)=>`
-    <tr>
-      <td style="color:#000">${i+1}. N° ${c.num}<br><span style="color:#444;font-size:8pt;">${c.bcod} – ${c.bnom}</span></td>
-      <td style="text-align:right">${fmt(c.imp)}</td>
-      <td style="text-align:right">${ffecha(c.fecha)}${c.fechaEfectiva&&c.fechaEfectiva!==c.fecha?'<br><small style="color:#c00">acred.'+ffecha(c.fechaEfectiva)+'</small>':''}</td>
-      <td style="text-align:right">${c.diasC}</td>
-      <td style="text-align:right">${c.tasa?c.tasa+'%':'—'}</td>
-      <td style="text-align:right">${c.estado==='OK'?fmt(c.interes):'—'}</td>
-      <td style="text-align:right">${c.estado==='OK'?fmt(c.iva):'—'}</td>
-      <td style="text-align:right">${c.estado==='OK'?fmt(c.perc):'—'}</td>
-      <td style="text-align:right">${c.estado==='OK'?`<strong>${fmt(c.neto)}</strong>`:`<span class="pdf-err">⚠ ${c.estado}</span>`}</td>
-    </tr>`).join('');
+  // ── Tabla de tasas vigentes ──
+  const filasT = tasas.map(t => {
+    const tem = (t.tasa / 12).toFixed(6);
+    return `<tr>
+      <td class="left">De ${t.desde} a ${t.hasta} días</td>
+      <td><strong>TNA</strong></td>
+      <td>${t.tasa.toFixed(2)}%</td>
+      <td>TEM (30)</td>
+      <td>${tem}%</td>
+    </tr>`;
+  }).join('');
 
-  const html=`
-    <div class="pdf-header">
-      <div class="pdf-title">Descuento de Cheques</div>
-      <div class="pdf-meta">
-        <table><tr>
-          <td>Cliente:</td><td>${cliente}</td>
-          <td>CUIT:</td><td>${cuit}</td>
-        </tr><tr>
-          <td>Vendedor:</td><td>${vendedor}</td>
-          <td>Fecha:</td><td>${ffecha(fechaOp)}</td>
-        </tr></table>
+  // ── Filas de documentos descontados (estilo BNA) ──
+  const filasDocs = cheques.map((c,i) => {
+    if (c.estado !== 'OK') return `
+      <tr>
+        <td>${i+1}</td>
+        <td class="left">${ffecha(c.fecha)}</td>
+        <td>$0,00</td>
+        <td class="left pdf-err">⚠ ${c.estado}</td>
+        <td>${fmt(c.imp)}</td>
+      </tr>`;
+    const tnaa = ((c.tasa/100) / (1 + (c.tasa/100)*(c.diasC/365)) * 100).toFixed(6);
+    const tem  = (c.tasa / 12).toFixed(6);
+    const acred = c.fechaEfectiva && c.fechaEfectiva !== c.fecha
+      ? ` <small style="color:#c00">(acred. ${ffecha(c.fechaEfectiva)})</small>` : '';
+    return `
+      <tr>
+        <td>${i+1}</td>
+        <td class="left">${ffecha(c.fecha)}${acred}</td>
+        <td>$0,00</td>
+        <td style="text-align:right">${fmt(c.interes)}</td>
+        <td style="text-align:right">${fmt(c.imp)}</td>
+      </tr>
+      <tr style="font-size:7pt;color:#444;background:#fafafa">
+        <td></td>
+        <td class="left" colspan="2">Plazo¹: ${c.diasC} &nbsp;&nbsp; TEM: ${tem} &nbsp;&nbsp; TNAA: ${tnaa}</td>
+        <td class="left" colspan="2">N° Cheque: ${c.num} &nbsp;·&nbsp; ${c.bcod} – ${c.bnom}</td>
+      </tr>`;
+  }).join('');
+
+  const subtotalInt = totInt;
+  const fechaFirst = cheques.length ? ffecha(cheques[0].fecha) : '—';
+  const fechaLast  = cheques.length ? ffecha(cheques[cheques.length-1].fecha) : '—';
+
+  const html = `
+    <!-- ENCABEZADO -->
+    <div class="pdf-emisor">
+      <div class="pdf-emisor-datos">
+        <strong>LIQUIDACIÓN DE DESCUENTO DE CHEQUES</strong><br>
+        IVA Responsable Inscripto
+      </div>
+      <div class="pdf-comprobante">
+        <div class="pdf-comp-title">COMPROBANTE<br>LIQUIDACIÓN</div>
+        Fecha de Emisión: ${ffecha(fechaOp)}<br>
+        Recibo Original
       </div>
     </div>
 
-    <div class="pdf-section-title">Detalle de cheques</div>
-    <table class="pdf-table">
-      <thead><tr>
-        <th style="text-align:left">N° Cheque / Banco</th>
-        <th>Importe</th>
-        <th>Vencimiento</th>
-        <th>Días corr.</th>
-        <th>TNA</th>
-        <th>Interés</th>
-        <th>IVA 10.5%</th>
-        <th>Perc. 1.5%</th>
-        <th>Neto</th>
-      </tr></thead>
-      <tbody>${filas}</tbody>
-    </table>
-
-    <div class="pdf-section-title">Resumen de la operación</div>
-    <div class="pdf-totales-wrap">
-    <table class="pdf-totales">
-      <tr><td>Nominal total:</td><td>${fmt(totN)}</td></tr>
-      <tr class="sep"><td colspan="2"></td></tr>
-      <tr><td>Intereses financieros:</td><td>- ${fmt(totInt)}</td></tr>
-      <tr><td>IVA 10.5% sobre intereses:</td><td>- ${fmt(totIva)}</td></tr>
-      <tr><td>Percepción IVA 1.5%:</td><td>- ${fmt(totPerc)}</td></tr>
-      <tr><td>Total descontado:</td><td>- ${fmt(totDesc)}</td></tr>
-      <tr class="destacado"><td>NETO A ACREDITAR:</td><td>${fmt(totNeto)}</td></tr>
-      <tr class="sep"><td colspan="2"></td></tr>
-      <tr><td>Plazo promedio ponderado:</td><td>${plazo} días corridos</td></tr>
-      <tr><td>TNA ponderada:</td><td>${tnaTxt}</td></tr>
-      <tr><td>TEA financiera ponderada (sin imp.):</td><td>${teaTxt}</td></tr>
-    </table>
+    <!-- DATOS DEL CLIENTE -->
+    <div class="pdf-cliente">
+      <table>
+        <tr>
+          <td>Cliente</td><td>${cliente}</td>
+          <td>CUIT</td><td>${cuit}</td>
+        </tr>
+        <tr>
+          <td>Vendedor</td><td>${vendedor}</td>
+          <td>Fecha operación</td><td>${ffecha(fechaOp)}</td>
+        </tr>
+      </table>
     </div>
 
-    <div class="pdf-footer">${ultimaSync?'Tasas vigentes al: '+ultimaSync+' &nbsp;·&nbsp; ':''} Generado el ${new Date().toLocaleDateString('es-AR')}</div>
+    <!-- TABLA DE TASAS VIGENTES -->
+    <div class="pdf-tasas-titulo">Tasas vigentes al momento de la operación</div>
+    <table class="pdf-tasas-tabla">
+      <thead><tr>
+        <th style="text-align:left">Plazo</th>
+        <th></th>
+        <th>Tasa</th>
+        <th></th>
+        <th>TEM (30)</th>
+      </tr></thead>
+      <tbody>${filasT}</tbody>
+    </table>
+
+    <!-- RESUMEN GENERAL -->
+    <table class="pdf-resumen-tabla" style="margin-bottom:10pt;">
+      <tr><td>Fecha Primer Vto.</td><td>${fechaFirst}</td></tr>
+      <tr><td>Último Vto.</td><td>${fechaLast}</td></tr>
+      <tr><td>Cantidad de Doc. Descontados</td><td>${cheques.length}</td></tr>
+      <tr><td>Capital</td><td>${fmt(totN)}</td></tr>
+      <tr><td>Interés</td><td>${fmt(subtotalInt)}</td></tr>
+      <tr><td>Subtotal Sin IVA ni Cargos</td><td>${fmt(totN - subtotalInt)}</td></tr>
+    </table>
+
+    <!-- DOCUMENTOS DESCONTADOS -->
+    <div class="pdf-docs-titulo">Documentos Descontados</div>
+    <table class="pdf-docs-tabla">
+      <thead><tr>
+        <th>Nro.</th>
+        <th>Vencimiento</th>
+        <th>Cargos</th>
+        <th>Descuento</th>
+        <th>Capital</th>
+      </tr></thead>
+      <tbody>${filasDocs}</tbody>
+    </table>
+
+    <!-- DEDUCCIONES -->
+    <div class="pdf-deduccion-titulo">Detalles Deducciones</div>
+    <div style="font-weight:bold;font-size:8pt;margin-bottom:3pt;">Impuestos</div>
+    <table class="pdf-deduccion-tabla">
+      <thead><tr>
+        <th style="text-align:left">Concepto</th>
+        <th>Moneda</th>
+        <th>Alícuota</th>
+        <th>Importe</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td>IVA</td><td style="text-align:center">PESOS</td>
+          <td style="text-align:center">10,50%</td>
+          <td style="text-align:right">${fmt(totIva)}</td>
+        </tr>
+        <tr>
+          <td>PERCEP. IVA RIN</td><td style="text-align:center">PESOS</td>
+          <td style="text-align:center">1,50%</td>
+          <td style="text-align:right">${fmt(totPerc)}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <table class="pdf-total-ded">
+      <tr>
+        <td>TOTAL DEDUCCIONES</td>
+        <td style="text-align:center">PESOS</td>
+        <td style="text-align:right">${fmt(totIva + totPerc)}</td>
+      </tr>
+    </table>
+
+    <table class="pdf-neto-final">
+      <tr>
+        <td>IMPORTE NETO</td>
+        <td style="text-align:center">PESOS</td>
+        <td>${fmt(totNeto)}</td>
+      </tr>
+    </table>
+
+    <!-- MÉTRICAS FINALES -->
+    <div class="pdf-metricas">
+      <table>
+        <tr>
+          <td>Plazo promedio ponderado:</td><td>${plazo} días corridos</td>
+          <td style="padding-left:20pt">TNA ponderada:</td><td>${tnaTxt}</td>
+          <td style="padding-left:20pt">TEA financiera (sin imp.):</td><td>${teaTxt}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- NOTAS AL PIE -->
+    <div class="pdf-nota">
+      ¹ Plazo expresado en días corridos, incluyendo día de clearing bancario.<br>
+      El importe neto será acreditado según lo acordado en la operación.
+    </div>
+
+    <div class="pdf-footer">
+      ${ultimaSync ? 'Tasas vigentes al: ' + ultimaSync + '  ·  ' : ''}
+      Generado el ${new Date().toLocaleDateString('es-AR')}
+    </div>
   `;
   document.getElementById('pdf-frame').innerHTML=html;
 }
