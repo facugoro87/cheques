@@ -130,7 +130,13 @@ tbody tr.editing-row td { background: rgba(245,158,11,0.06); }
 #pdf-frame { display: none; }
 
 @media print {
-  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; color: #000 !important; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  #pdf-frame, #pdf-frame * {
+    color: #000 !important;
+    background-color: transparent !important;
+    border-color: #999 !important;
+  }
+  #pdf-frame { background-color: #fff !important; }
   body > *:not(#pdf-frame) { display: none !important; }
   #pdf-frame {
     display: block !important;
@@ -166,39 +172,39 @@ tbody tr.editing-row td { background: rgba(245,158,11,0.06); }
   /* ── TABLA DE TASAS ── */
   .pdf-tasas-titulo { font-weight: bold; font-size: 8.5pt; margin: 10pt 0 4pt; border-bottom: 1pt solid #000; padding-bottom: 2pt; color: #000; }
   .pdf-tasas-tabla { width: 100%; border-collapse: collapse; font-size: 8pt; margin-bottom: 10pt; }
-  .pdf-tasas-tabla th { background: #d8d8d8; border: 0.5pt solid #666; padding: 3pt 6pt; text-align: center; font-weight: bold; color: #000; }
+  .pdf-tasas-tabla th { background: #d8d8d8 !important; background: #d8d8d8; border: 0.5pt solid #666; padding: 3pt 6pt; text-align: center; font-weight: bold; color: #000; }
   .pdf-tasas-tabla td { border: 0.5pt solid #999; padding: 3pt 6pt; text-align: center; color: #000; background: #fff; }
-  .pdf-tasas-tabla tr:nth-child(even) td { background: #f0f0f0; }
+  .pdf-tasas-tabla tr:nth-child(even) td { background: #f0f0f0 !important; }
   .pdf-tasas-tabla td:first-child { text-align: left; }
 
   /* ── TABLA DOCUMENTOS ── */
   .pdf-docs-titulo { font-weight: bold; font-size: 8.5pt; margin: 10pt 0 0; border-bottom: 1pt solid #000; padding-bottom: 2pt; color: #000; }
   .pdf-docs-tabla { width: 100%; border-collapse: collapse; font-size: 7.5pt; margin-bottom: 0; }
-  .pdf-docs-tabla th { background: #d8d8d8; border: 0.5pt solid #666; padding: 3pt 5pt; text-align: center; font-weight: bold; color: #000; }
+  .pdf-docs-tabla th { background: #d8d8d8 !important; background: #d8d8d8; border: 0.5pt solid #666; padding: 3pt 5pt; text-align: center; font-weight: bold; color: #000; }
   .pdf-docs-tabla td { border: 0.5pt solid #999; padding: 2.5pt 5pt; text-align: right; color: #000; vertical-align: top; background: #fff; }
   .pdf-docs-tabla td:first-child { text-align: center; }
   .pdf-docs-tabla td.left { text-align: left; }
-  .pdf-docs-tabla tr.alt-row td { background: #f5f5f5; }
-  .pdf-docs-tabla tr.sub-row td { color: #333; font-size: 7pt; background: #fafafa; border-top: none; }
+  .pdf-docs-tabla tr.alt-row td { background: #f5f5f5 !important; }
+  .pdf-docs-tabla tr.sub-row td { color: #333 !important; font-size: 7pt; background: #fafafa; border-top: none; }
 
   /* ── RESUMEN GENERAL ── */
   .pdf-resumen-tabla { width: 100%; border-collapse: collapse; font-size: 8.5pt; margin-bottom: 10pt; }
   .pdf-resumen-tabla td { padding: 3pt 6pt; border: 0.5pt solid #999; color: #000; }
-  .pdf-resumen-tabla td:first-child { background: #e8e8e8; font-weight: bold; width: 55%; color: #000; }
+  .pdf-resumen-tabla td:first-child { background: #e8e8e8 !important; font-weight: bold; width: 55%; color: #000; }
   .pdf-resumen-tabla td:last-child { text-align: right; }
 
   /* ── DEDUCCIONES ── */
   .pdf-deduccion-titulo { font-weight: bold; font-size: 8.5pt; margin: 10pt 0 4pt; color: #000; }
   .pdf-deduccion-tabla { width: 100%; border-collapse: collapse; font-size: 8.5pt; margin-bottom: 4pt; }
-  .pdf-deduccion-tabla th { background: #d8d8d8; border: 0.5pt solid #666; padding: 3pt 6pt; font-weight: bold; color: #000; }
+  .pdf-deduccion-tabla th { background: #d8d8d8 !important; background: #d8d8d8; border: 0.5pt solid #666; padding: 3pt 6pt; font-weight: bold; color: #000; }
   .pdf-deduccion-tabla th:last-child { text-align: right; }
   .pdf-deduccion-tabla td { border: 0.5pt solid #999; padding: 3pt 6pt; color: #000; background: #fff; }
   .pdf-deduccion-tabla td:last-child { text-align: right; }
   .pdf-total-ded { width: 100%; border-collapse: collapse; font-size: 8.5pt; margin-bottom: 4pt; }
-  .pdf-total-ded td { padding: 3pt 6pt; border: 0.5pt solid #666; font-weight: bold; background: #e8e8e8; color: #000; }
+  .pdf-total-ded td { background: #e8e8e8 !important; padding: 3pt 6pt; border: 0.5pt solid #666; font-weight: bold; background: #e8e8e8; color: #000; }
   .pdf-total-ded td:last-child { text-align: right; }
   .pdf-neto-final { width: 100%; border-collapse: collapse; font-size: 10pt; margin-top: 2pt; }
-  .pdf-neto-final td { padding: 5pt 6pt; border: 1.5pt solid #000; font-weight: bold; background: #d0d0d0; color: #000; }
+  .pdf-neto-final td { background: #d0d0d0 !important; padding: 5pt 6pt; border: 1.5pt solid #000; font-weight: bold; background: #d0d0d0; color: #000; }
   .pdf-neto-final td:last-child { text-align: right; font-size: 11pt; }
 
   /* ── MÉTRICAS FINALES ── */
