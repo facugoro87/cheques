@@ -1403,7 +1403,17 @@ function calcularOptimas(total, cantidad, plazoObj, tolerancia) {
 
   mejores.sort((a,b) => a.costoTotal - b.costoTotal);
   const menorCosto = mejores[0];
-  const menorPlazo = [...mejores].sort((a,b) => a.plazoPromPond - b.plazoPromPond)[0];
+
+  // Menor plazo: buscar la opción con menor plazo promedio que sea distinta a menorCosto
+  const porPlazo = [...mejores].sort((a,b) => a.plazoPromPond - b.plazoPromPond);
+  // Si la de menor plazo es igual a la de menor costo, tomar la siguiente diferente
+  let menorPlazo = porPlazo[0];
+  for (const op of porPlazo) {
+    const mismosPlazos = op.plazos.join(',') === menorCosto.plazos.join(',');
+    if (!mismosPlazos) { menorPlazo = op; break; }
+  }
+  // Si no hay opción diferente, mostrar la misma con nota
+  menorPlazo._esMisma = menorPlazo.plazos.join(',') === menorCosto.plazos.join(',');
 
   return {menorCosto, menorPlazo};
 }
@@ -1454,6 +1464,7 @@ function renderOptimas(resultado, total, cantidad, plazoObj) {
         <div class="opt-stat"><span class="opt-stat-label">Porcentaje del total</span><span class="opt-stat-val red">${costoPct}%</span></div>
         <div class="opt-stat"><span class="opt-stat-label">Neto a recibir</span><span class="opt-stat-val green">${fmt(ev.neto)}</span></div>
         <div class="opt-stat"><span class="opt-stat-label">Plazo prom. ponderado</span><span class="opt-stat-val accent">${Math.round(ev.plazoPromPond)} días</span></div>
+        ${ev._esMisma ? '<div style="font-size:11px;color:var(--amber);margin-top:6px;">&#9888; Con estos parámetros ambas opciones coinciden. Probá aumentar la tolerancia o ajustar el plazo.</div>' : ''}
         <div class="opt-cheques-list">
           ${ev.cheques.map((c,i)=>`
             <div class="opt-cheque-row">
