@@ -1341,8 +1341,7 @@ function optimizar() {
 }
 
 function calcularOptimas(total, cantidad, plazoObj, tolerancia) {
-  // Cheques equiespaciados: días = [inicio, inicio+sep, inicio+2*sep, ...]
-  // También prueba con primer cheque en 0 (contado) o muy pocos días
+  const SEP_MIN = 25; // separación mínima entre cheques (el optimizador prueba de 25 a 60 días)
 
   function evalCombinacion(plazos, importes) {
     const totImp = importes.reduce((a,b)=>a+b,0);
@@ -1351,10 +1350,7 @@ function calcularOptimas(total, cantidad, plazoObj, tolerancia) {
     for (let i=0; i<plazos.length; i++) {
       const d = plazos[i];
       const imp = importes[i];
-      // Cheque a 0 días: se cobra al contado, sin descuento
       if (d === 0) {
-        costoTotal += 0;
-        plazoPromPond += 0;
         cheques.push({dias:0, imp, tasa:0, interes:0, iva:0, perc:0, totalDesc:0, neto:imp});
         continue;
       }
@@ -1372,8 +1368,8 @@ function calcularOptimas(total, cantidad, plazoObj, tolerancia) {
   const impIguales = Array(cantidad).fill(total/cantidad);
   const mejores = [];
 
-  // ── Opción A: todos los cheques a plazo (equiespaciados) ──
-  for (let sep = 1; sep <= 90; sep++) {
+  // ── Opción A: todos los cheques a plazo, equiespaciados con sep >= SEP_MIN ──
+  for (let sep = SEP_MIN; sep <= 45; sep++) {
     const inicio = Math.round(plazoObj - sep * (cantidad-1) / 2);
     if (inicio < 1) continue;
     const plazos = Array.from({length: cantidad}, (_, i) => inicio + sep * i);
@@ -1385,33 +1381,28 @@ function calcularOptimas(total, cantidad, plazoObj, tolerancia) {
     mejores.push(ev);
   }
 
-  // ── Opción B: primer cheque al contado (día 0 o 1-7 días), resto equiespaciados ──
-  // El plazo promedio de los n-1 cheques restantes debe compensar el 0 del primero
-  // prom_pond = (0*imp + sum(dias_resto*imp)) / total = sum(dias_resto) / (n-1) = plazoObj * n/(n-1)
+  // ── Opción B: primer cheque al contado (día 0), resto equiespaciados con sep >= SEP_MIN ──
   if (cantidad > 1) {
-    const plazoResto = Math.round(plazoObj * cantidad / (cantidad - 1));
-    for (let inicio = 1; inicio <= 15; inicio++) {
-      for (let sep = 1; sep <= 90; sep++) {
-        const plazosResto = Array.from({length: cantidad-1}, (_, i) => inicio + sep * i);
-        if (plazosResto[plazosResto.length-1] > 360) continue;
-        if (!plazosResto.every(d => getTasa(d))) continue;
-        const plazos = [0, ...plazosResto];
-        const ev = evalCombinacion(plazos, impIguales);
-        if (!ev) continue;
-        if (Math.abs(ev.plazoPromPond - plazoObj) > tolerancia + 1) continue;
-        mejores.push(ev);
-      }
+    for (let sep = SEP_MIN; sep <= 45; sep++) {
+      // primer cheque en 0, segundo en sep, tercero en 2*sep, etc.
+      const plazosResto = Array.from({length: cantidad-1}, (_, i) => sep + sep * i);
+      if (plazosResto[plazosResto.length-1] > 360) continue;
+      if (!plazosResto.every(d => getTasa(d))) continue;
+      const plazos = [0, ...plazosResto];
+      const ev = evalCombinacion(plazos, impIguales);
+      if (!ev) continue;
+      if (Math.abs(ev.plazoPromPond - plazoObj) > tolerancia + 1) continue;
+      mejores.push(ev);
     }
   }
 
   if (!mejores.length) return null;
 
   mejores.sort((a,b) => a.costoTotal - b.costoTotal);
-  const menorCosto  = mejores[0];
-  const mayorPlazo  = [...mejores].sort((a,b) => a.plazoPromPond - b.plazoPromPond)[0];
-  const equilibrada = encontrarEquilibrada(mejores, menorCosto, mayorPlazo);
+  const menorCosto = mejores[0];
+  const menorPlazo = [...mejores].sort((a,b) => a.plazoPromPond - b.plazoPromPond)[0];
 
-  return {menorCosto, mayorPlazo, equilibrada};
+  return {menorCosto, menorPlazo};
 }
 
 function encontrarEquilibrada(lista, menorCosto, mayorPlazo) {
@@ -1440,12 +1431,11 @@ function renderOptimas(resultado, total, cantidad, plazoObj) {
     return;
   }
 
-  const {menorCosto, mayorPlazo, equilibrada} = resultado;
+  const {menorCosto, menorPlazo} = resultado;
 
   const opciones = [
-    {ev: menorCosto,  cls:'winner',   icon:'&#9733;', titulo:'Menor costo financiero'},
-    {ev: mayorPlazo,  cls:'shortest', icon:'&#9201;', titulo:'Plazo más corto'},
-    {ev: equilibrada, cls:'balanced', icon:'&#9878;', titulo:'Más equilibrada'},
+    {ev: menorCosto, cls:'winner',   icon:'&#9733;', titulo:'Menor costo financiero'},
+    {ev: menorPlazo, cls:'shortest', icon:'&#9201;', titulo:'Menor plazo promedio'},
   ];
 
   let html = '<div class="opt-cards">';
@@ -1485,7 +1475,7 @@ function renderOptimas(resultado, total, cantidad, plazoObj) {
 function usarEstructura(idx) {
   const r = window._optResultado;
   if (!r) return;
-  const opciones = [r.menorCosto, r.mayorPlazo, r.equilibrada];
+  const opciones = [r.menorCosto, r.menorPlazo];
   const ev = opciones[idx];
   if (!ev) return;
 
