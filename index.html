@@ -1344,7 +1344,7 @@ function optimizar() {
 }
 
 function calcularOptimas(total, cantidad, plazoObj, tolerancia) {
-  const SEP_MIN = 25; // separación mínima entre cheques (el optimizador prueba de 25 a 60 días)
+  const SEP_MIN = 25;
 
   function evalCombinacion(plazos, importes) {
     const totImp = importes.reduce((a,b)=>a+b,0);
@@ -1371,51 +1371,29 @@ function calcularOptimas(total, cantidad, plazoObj, tolerancia) {
   const impIguales = Array(cantidad).fill(total/cantidad);
   const mejores = [];
 
-  // ── Opción A: todos los cheques a plazo, equiespaciados con sep >= SEP_MIN ──
   for (let sep = SEP_MIN; sep <= 45; sep++) {
+    // Opción A: todos a plazo, equiespaciados
     const inicio = Math.round(plazoObj - sep * (cantidad-1) / 2);
-    if (inicio < 1) continue;
-    const plazos = Array.from({length: cantidad}, (_, i) => inicio + sep * i);
-    if (plazos[plazos.length-1] > 360) continue;
-    if (!plazos.every(d => getTasa(d))) continue;
-    const ev = evalCombinacion(plazos, impIguales);
-    if (!ev) continue;
-    if (Math.abs(ev.plazoPromPond - plazoObj) > tolerancia + 1) continue;
-    mejores.push(ev);
-  }
-
-  // ── Opción B: primer cheque al contado (día 0), resto equiespaciados con sep >= SEP_MIN ──
-  if (cantidad > 1) {
-    for (let sep = SEP_MIN; sep <= 45; sep++) {
-      // primer cheque en 0, segundo en sep, tercero en 2*sep, etc.
-      const plazosResto = Array.from({length: cantidad-1}, (_, i) => sep + sep * i);
-      if (plazosResto[plazosResto.length-1] > 360) continue;
-      if (!plazosResto.every(d => getTasa(d))) continue;
-      const plazos = [0, ...plazosResto];
-      const ev = evalCombinacion(plazos, impIguales);
-      if (!ev) continue;
-      if (Math.abs(ev.plazoPromPond - plazoObj) > tolerancia + 1) continue;
-      mejores.push(ev);
+    if (inicio >= 1) {
+      const plazos = Array.from({length: cantidad}, (_, i) => inicio + sep * i);
+      if (plazos[plazos.length-1] <= 360 && plazos.every(d => getTasa(d))) {
+        const ev = evalCombinacion(plazos, impIguales);
+        if (ev && Math.abs(ev.plazoPromPond - plazoObj) <= tolerancia + 1) mejores.push(ev);
+      }
+    }
+    // Opción B: primer cheque al contado, resto equiespaciados
+    if (cantidad > 1) {
+      const plazos = [0, ...Array.from({length: cantidad-1}, (_, i) => sep + sep * i)];
+      if (plazos[plazos.length-1] <= 360 && plazos.slice(1).every(d => getTasa(d))) {
+        const ev = evalCombinacion(plazos, impIguales);
+        if (ev && Math.abs(ev.plazoPromPond - plazoObj) <= tolerancia + 1) mejores.push(ev);
+      }
     }
   }
 
   if (!mejores.length) return null;
-
   mejores.sort((a,b) => a.costoTotal - b.costoTotal);
-  const menorCosto = mejores[0];
-
-  // Menor plazo: buscar la opción con menor plazo promedio que sea distinta a menorCosto
-  const porPlazo = [...mejores].sort((a,b) => a.plazoPromPond - b.plazoPromPond);
-  // Si la de menor plazo es igual a la de menor costo, tomar la siguiente diferente
-  let menorPlazo = porPlazo[0];
-  for (const op of porPlazo) {
-    const mismosPlazos = op.plazos.join(',') === menorCosto.plazos.join(',');
-    if (!mismosPlazos) { menorPlazo = op; break; }
-  }
-  // Si no hay opción diferente, mostrar la misma con nota
-  menorPlazo._esMisma = menorPlazo.plazos.join(',') === menorCosto.plazos.join(',');
-
-  return {menorCosto, menorPlazo};
+  return mejores[0];
 }
 
 function encontrarEquilibrada(lista, menorCosto, mayorPlazo) {
@@ -1440,78 +1418,100 @@ function encontrarEquilibrada(lista, menorCosto, mayorPlazo) {
 function renderOptimas(resultado, total, cantidad, plazoObj) {
   const res = document.getElementById('opt-resultado');
   if (!resultado) {
-    res.innerHTML = '<div class="card"><div class="opt-empty">No se encontraron combinaciones válidas para estos parámetros.<br>Probá ajustar el plazo objetivo o la tolerancia.</div></div>';
+    res.innerHTML = '<div class="card"><div class="opt-empty">No se encontraron combinaciones válidas.<br>Probá aumentar la tolerancia o ajustar el plazo objetivo.</div></div>';
     return;
   }
 
-  const {menorCosto, menorPlazo} = resultado;
-
-  const opciones = [
-    {ev: menorCosto, cls:'winner',   icon:'&#9733;', titulo:'Menor costo financiero'},
-    {ev: menorPlazo, cls:'shortest', icon:'&#9201;', titulo:'Menor plazo promedio'},
-  ];
+  const ev = resultado;
+  const costoPct = (ev.costoTotal / total * 100).toFixed(3);
+  window._optResultado = ev;
 
   let html = '<div class="opt-cards">';
-  opciones.forEach(({ev, cls, icon, titulo}, idx) => {
-    const costoPct = (ev.costoTotal / total * 100).toFixed(3);
-    html += `
-    <div class="opt-card ${cls}">
+  html += `
+    <div class="opt-card winner" style="max-width:420px;">
       <div class="opt-card-header">
-        <span class="opt-card-title">${icon} ${titulo}</span>
+        <span class="opt-card-title">&#9733; Estructura óptima — menor costo financiero</span>
       </div>
       <div class="opt-card-body">
-        <div class="opt-stat"><span class="opt-stat-label">Costo financiero total</span><span class="opt-stat-val red">-${fmt(ev.costoTotal)}</span></div>
-        <div class="opt-stat"><span class="opt-stat-label">Porcentaje del total</span><span class="opt-stat-val red">${costoPct}%</span></div>
+        <div class="opt-stat"><span class="opt-stat-label">Costo financiero total (c/IVA)</span><span class="opt-stat-val red">-${fmt(ev.costoTotal)}</span></div>
+        <div class="opt-stat"><span class="opt-stat-label">Porcentaje sobre el total</span><span class="opt-stat-val red">${costoPct}%</span></div>
         <div class="opt-stat"><span class="opt-stat-label">Neto a recibir</span><span class="opt-stat-val green">${fmt(ev.neto)}</span></div>
         <div class="opt-stat"><span class="opt-stat-label">Plazo prom. ponderado</span><span class="opt-stat-val accent">${Math.round(ev.plazoPromPond)} días</span></div>
-        ${ev._esMisma ? '<div style="font-size:11px;color:var(--amber);margin-top:6px;">&#9888; Con estos parámetros ambas opciones coinciden. Probá aumentar la tolerancia o ajustar el plazo.</div>' : ''}
-        <div class="opt-cheques-list">
+        <div class="opt-cheques-list" style="margin-top:12px;">
           ${ev.cheques.map((c,i)=>`
             <div class="opt-cheque-row">
               <span>Cheque ${i+1} — ${c.dias===0?'Contado':c.dias+' días'}</span>
               <span>${fmt(c.imp)}</span>
-              <span style="color:var(--muted)">${c.dias===0?'sin costo':c.tasa+'%'}</span>
+              <span style="color:var(--muted)">${c.dias===0?'sin costo':c.tasa+'% TNA'}</span>
             </div>`).join('')}
         </div>
-        <button class="opt-usar-btn" onclick="usarEstructura(${idx})">Usar esta estructura en Operación ↗</button>
+        <button class="opt-usar-btn" onclick="usarEstructura()">&#10003; Cargar en Operación ↗</button>
       </div>
     </div>`;
-  });
   html += '</div>';
-
-  // Guardar para uso posterior
-  window._optResultado = resultado;
-  window._optTotal = total;
-
   res.innerHTML = html;
 }
 
-function usarEstructura(idx) {
-  const r = window._optResultado;
-  if (!r) return;
-  const opciones = [r.menorCosto, r.menorPlazo];
-  const ev = opciones[idx];
+function usarEstructura() {
+  const ev = window._optResultado;
   if (!ev) return;
 
-  // Ir a la pestaña operación
-  const tab = document.querySelector('.nav-tab');
+  // Confirmar si hay cheques ya cargados
+  if (cheques.length > 0) {
+    if (!confirm('Esto va a reemplazar los cheques actuales en la operación. ¿Continuás?')) return;
+    cheques = [];
+  }
+
+  // Calcular fechas a partir de la fecha de operación
+  const base = fechaBase();
+  const baseDate = new Date(base + 'T12:00:00');
+
+  ev.cheques.forEach((c, i) => {
+    if (c.dias === 0) {
+      // Cheque al contado: fecha de hoy, importe sin descuento
+      cheques.push({
+        id: nextId++,
+        num: 'CH-' + String(i+1).padStart(2,'0'),
+        bcod: '', bnom: 'A definir',
+        imp: c.imp, fecha: base,
+        dias: 0, diasC: 0,
+        tasa: 0, interes: 0, iva: 0, perc: 0, totalDesc: 0, neto: c.imp,
+        estado: 'OK'
+      });
+    } else {
+      const fechaVto = new Date(baseDate);
+      fechaVto.setDate(fechaVto.getDate() + c.dias);
+      const fechaISO = fechaVto.toISOString().split('T')[0];
+      const {dias: diasH} = {dias: diasHabiles(base, fechaISO)};
+      const {dias: diasC, fechaEfectiva} = diasCorridos(base, fechaISO);
+      const t = getTasa(diasC);
+      let interes=0,iva=0,perc=0,totalDesc=0,neto=c.imp,estado='OK';
+      if (t) {
+        const r = calcCheque(c.imp, diasC, t.tasa);
+        ({interes,iva,perc,totalDesc,neto} = r);
+      } else { estado = 'SIN TASA'; }
+      cheques.push({
+        id: nextId++,
+        num: 'CH-' + String(i+1).padStart(2,'0'),
+        bcod: '', bnom: 'A definir',
+        imp: c.imp, fecha: fechaISO, fechaEfectiva,
+        dias: diasH, diasC,
+        tasa: t ? t.tasa : null,
+        interes, iva, perc, totalDesc, neto, estado
+      });
+    }
+  });
+
+  // Ir a la pestaña operación y renderizar
   showPage('operacion', document.querySelectorAll('.nav-tab')[0]);
+  renderCheques();
 
-  // Mostrar mensaje con la estructura sugerida
-  const hoyStr = fechaBase();
-  const hoyDate = new Date(hoyStr+'T12:00:00');
-
-  // Pre-llenar los campos con el primer cheque como guía
-  alert(
-    'Estructura sugerida:\n\n' +
-    ev.cheques.map((c,i) => {
-      const fechaCheque = new Date(hoyDate);
-      fechaCheque.setDate(fechaCheque.getDate() + c.dias);
-      return `Cheque ${i+1}: ${fmt(c.imp)} — ${c.dias} días (${ffecha(fechaCheque.toISOString().split('T')[0])}) — TNA ${c.tasa}%`;
-    }).join('\n') +
-    '\n\nCargá cada cheque manualmente con estas fechas y montos.'
-  );
+  // Aviso al vendedor
+  setTimeout(() => {
+    alert('✓ Estructura cargada en Operación.\n\nRecordá completar el N° de cheque y el banco de cada uno antes de cerrar la operación.');
+  }, 200);
 }
+
 
 // ── PÁGINA PRECIO ──
 let modoPrecio = 'contado';
